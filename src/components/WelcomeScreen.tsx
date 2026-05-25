@@ -1,13 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Continent } from '../types';
 import { COUNTRIES } from '../data/countries';
+import LeaderboardTable from './LeaderboardTable';
+import { getLeaderboard, type LeaderboardEntry } from '../utils/leaderboard';
 
 interface WelcomeScreenProps {
   onStart: (name: string, continents: Continent[], length: number) => void;
 }
 
 const ALL_CONTINENTS: Continent[] = ['Africa', 'Europe', 'Americas', 'Asia', 'Oceania'];
-const GAME_LENGTHS = [25, 50, 100, 150] as const;
+const GAME_LENGTHS = [25, 50, 100, 150, 9999] as const;
+const ALL_SENTINEL = 9999;
 
 const REGION_OPTIONS: { id: Continent; label: string }[] = [
   { id: 'Africa',   label: '🌍 Africa'   },
@@ -32,9 +35,16 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
     [selectedContinents],
   );
 
-  const effectiveLength = Math.min(gameLength, pool.length);
-  const showCapNote = pool.length > 0 && pool.length < gameLength;
+  const isAllMode = gameLength === ALL_SENTINEL;
+  const effectiveLength = isAllMode ? pool.length : Math.min(gameLength, pool.length);
+  const showAllHint = isAllMode;
+  const showCapNote = !isAllMode && pool.length > 0 && pool.length < gameLength;
   const canStart = trimmed.length > 0 && pool.length > 0;
+
+  // Load leaderboard reactively so it reflects the latest score when the player
+  // returns to this screen after finishing a game.
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  useEffect(() => { setLeaderboard(getLeaderboard()); }, []);
 
   function toggleContinent(continent: Continent) {
     setSelectedContinents(prev => {
@@ -162,25 +172,44 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               Game Length
             </label>
 
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {GAME_LENGTHS.map(n => (
                 <button
                   key={n}
                   onClick={() => setGameLength(n)}
                   className={chipClass(gameLength === n)}
                 >
-                  <span className="block text-center tabular-nums">{n}</span>
+                  <span className="block text-center tabular-nums">
+                    {n === ALL_SENTINEL ? 'ALL' : n}
+                  </span>
                 </button>
               ))}
             </div>
 
-            {/* Cap note — shown when selected pool is smaller than game length */}
+            {/* Hint area — always reserves space to prevent layout jump */}
             <div className="mt-2 min-h-[1.25rem]">
-              {showCapNote && (
-                <p className="font-ibm text-[11px] text-gold opacity-70 leading-snug">
-                  Only {pool.length} flags available for this selection
+              {showAllHint && (
+                <p className="font-ibm text-[11px] text-[#6b7a8d] leading-snug">
+                  {pool.length} flags available for your selection
                 </p>
               )}
+              {showCapNote && (
+                <p className="font-ibm text-[11px] text-gold opacity-70 leading-snug">
+                  Only {pool.length} flags available — game will use all of them
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="h-px bg-navy-border" />
+
+          {/* ── Leaderboard ─────────────────────────────────────────────── */}
+          <div>
+            <p className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-3">
+              🏆 Global Top 10
+            </p>
+            <div className="border border-navy-border">
+              <LeaderboardTable entries={leaderboard} />
             </div>
           </div>
 

@@ -135,7 +135,8 @@ export default function useGameState(): UseGameStateReturn {
   );
 
   const submitAnswer = useCallback((input: string, assurance: number) => {
-    if (!input.trim() || assurance === 0) return;
+    // 0 assurance is explicitly allowed: correct → +0, wrong → -0 (no points risked).
+    if (!input.trim()) return;
     if (timerRef.current) return;
 
     const { queue, currentIndex } = stateRef.current;

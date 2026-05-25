@@ -7,6 +7,7 @@ export interface Country {
   flag: string;
   code: string;
   continent: Continent;
+  aliases?: string[];
 }
 
 export interface GameState {

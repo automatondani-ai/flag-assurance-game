@@ -15,8 +15,8 @@ import Fuse from 'fuse.js';
 import { COUNTRIES } from '../data/countries';
 
 const fuse = new Fuse(COUNTRIES, {
-  keys: ['name'],
-  threshold: 0.35,
+  keys: ['name', 'aliases'],
+  threshold: 0.4,
   includeScore: true,
 });
 

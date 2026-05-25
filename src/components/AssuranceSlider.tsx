@@ -146,6 +146,13 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
           </span>
         ))}
       </div>
+
+      {/* Zero-confidence hint */}
+      {value === 0 && (
+        <p className="font-ibm text-[10px] text-[#4a5568] mt-1 leading-snug">
+          0 = no confidence (no points risked)
+        </p>
+      )}
     </div>
   );
 }

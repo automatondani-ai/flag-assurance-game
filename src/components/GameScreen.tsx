@@ -13,7 +13,14 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
   const [assurance, setAssurance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset local controls on each new question
+  // Track which country code's flag has finished loading.
+  // Comparing against currentCountry.code gives a synchronous imgLoaded
+  // signal: it becomes false the instant the country changes (no async lag).
+  const [loadedCode, setLoadedCode] = useState<string | null>(null);
+  const imgLoaded = loadedCode === currentCountry.code;
+
+  // Reset local controls and clear stale loaded-code on each new question,
+  // ensuring the input/slider are blank before the new flag appears.
   useEffect(() => {
     setInput('');
     setAssurance(0);
@@ -21,7 +28,7 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
   }, [state.currentIndex]);
 
   const isFeedbackVisible = state.lastCorrect !== null;
-  const canSubmit = input.trim().length > 0 && assurance > 0 && !isFeedbackVisible;
+  const canSubmit = input.trim().length > 0 && !isFeedbackVisible;
 
   function handleSubmit() {
     if (!canSubmit) return;
@@ -87,12 +94,24 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
             <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-gold opacity-40" />
 
             {/* Flag image — aspect-ratio container, light bg for contrast */}
-            <div className="aspect-[3/2] w-full mb-6 bg-slate-100 border border-slate-300 rounded-sm overflow-hidden">
+            <div className="aspect-[3/2] w-full mb-6 bg-slate-100 border border-slate-300 rounded-sm overflow-hidden relative">
+
+              {/* Skeleton placeholder — visible while the flag is loading */}
+              {!imgLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center animate-pulse bg-slate-200">
+                  <span className="text-4xl select-none text-slate-400">🏳</span>
+                </div>
+              )}
+
+              {/* Flag — always in the DOM so onLoad fires; opacity gates visibility */}
               <img
-                key={currentCountry.code}
                 src={currentCountry.flag}
                 alt="Identify this flag"
-                className="w-full h-full object-contain p-2 animate-flag-fade-in"
+                onLoad={() => setLoadedCode(currentCountry.code)}
+                className={[
+                  'w-full h-full object-contain p-2 transition-opacity duration-300',
+                  imgLoaded ? 'opacity-100' : 'opacity-0',
+                ].join(' ')}
               />
             </div>
 
