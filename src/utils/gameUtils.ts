@@ -7,6 +7,17 @@ export function shuffleArray<T>(arr: T[]): T[] {
   return result;
 }
 
+/**
+ * Two-pass shuffle: Fisher-Yates followed by a random rotation offset.
+ * The rotation breaks any residual low-entropy patterns that a single pass
+ * can produce when Math.random() has not advanced much (e.g. quick restarts).
+ */
+export function doubleShuffleArray<T>(arr: T[]): T[] {
+  const first  = shuffleArray([...arr]);
+  const offset = Math.floor(Math.random() * first.length);
+  return [...first.slice(offset), ...first.slice(0, offset)];
+}
+
 export function normalizeInput(input: string): string {
   return input.trim().toLowerCase();
 }

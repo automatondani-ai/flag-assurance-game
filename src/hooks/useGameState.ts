@@ -1,6 +1,6 @@
 import { useReducer, useRef, useCallback } from 'react';
 import type { GameState, Country, Continent } from '../types';
-import { shuffleArray, checkAnswer, calculateScoreDelta } from '../utils/gameUtils';
+import { doubleShuffleArray, checkAnswer, calculateScoreDelta } from '../utils/gameUtils';
 import { saveScore } from '../utils/leaderboard';
 import { COUNTRIES } from '../data/countries';
 
@@ -189,11 +189,30 @@ export default function useGameState(): UseGameStateReturn {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      const pool =
+
+      // ── 1. Filter by continent ─────────────────────────────────────────────
+      const filteredPool =
         continents.length === 0
-          ? COUNTRIES
+          ? [...COUNTRIES]                                           // always work on a copy
           : COUNTRIES.filter(c => continents.includes(c.continent));
-      const queue = shuffleArray(pool).slice(0, Math.min(length, pool.length));
+
+      // ── 2. Seed-based entropy pre-mix ──────────────────────────────────────
+      // Combine wall-clock time with an extra random value so that rapid
+      // back-to-back sessions (hot-reload, quick "play again") don't share
+      // similar PRNG state entering the primary shuffle.
+      const seed = Date.now() + Math.floor(Math.random() * 99999);
+
+      const premixed = [...filteredPool];
+      for (let i = 0; i < 5; i++) {
+        // Two indices derived from independent linear-congruential steps of seed
+        const a = Math.abs((seed * (i + 1) * 9301 + 49297)) % premixed.length;
+        const b = Math.abs((seed * (i + 2) * 6271 + 31337)) % premixed.length;
+        [premixed[a], premixed[b]] = [premixed[b], premixed[a]];
+      }
+
+      // ── 3. Double Fisher-Yates + rotation ─────────────────────────────────
+      const queue = doubleShuffleArray(premixed).slice(0, Math.min(length, premixed.length));
+
       const region = continents.length >= ALL_CONTINENT_COUNT ? 'World' : continents.join(', ');
       startTimeRef.current = Date.now();
       dispatch({ type: 'START', playerName: playerName.trim(), queue, region, gameLength: queue.length });
