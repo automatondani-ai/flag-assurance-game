@@ -26,25 +26,21 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
     }, 150);
   }, []);
 
-  // Global mouse/touch move and up handlers attached on drag start
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       onChange(calculateValue(e.clientX));
     };
-
     const onMouseUp = () => {
       if (!isDragging.current) return;
       isDragging.current = false;
       startTransition();
     };
-
     const onTouchMove = (e: TouchEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
       onChange(calculateValue(e.touches[0].clientX));
     };
-
     const onTouchEnd = () => {
       if (!isDragging.current) return;
       isDragging.current = false;
@@ -55,7 +51,6 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onTouchEnd);
-
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
@@ -77,31 +72,25 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
-    // Ignore if the click originated from a drag release
     if (isDragging.current) return;
     onChange(calculateValue(e.clientX));
     startTransition();
   };
 
-  const knobTransition = isTransitioning.current
-    ? 'transition-all duration-150'
-    : '';
+  const knobTransition = isTransitioning.current ? 'transition-all duration-150' : '';
 
   return (
     <div className="w-full select-none">
       {/* Label + value */}
       <div className="flex items-baseline justify-between mb-3">
-        <span className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase">
+        <span className="font-fredoka text-base uppercase tracking-wide" style={{ color: 'rgba(255,248,240,0.7)' }}>
           Assurance
         </span>
         <span
-          className={[
-            'font-ibm text-xl font-semibold tabular-nums transition-colors duration-150',
-            value === 0 ? 'text-[#3a4557]' : 'text-gold',
-          ].join(' ')}
+          className="font-fredoka text-2xl tabular-nums transition-colors duration-150"
+          style={{ color: value === 0 ? 'rgba(255,248,240,0.25)' : 'var(--color-gold)' }}
         >
-          {value}
-          <span className="text-sm font-normal ml-0.5">%</span>
+          {value}<span className="text-lg ml-0.5">%</span>
         </span>
       </div>
 
@@ -109,38 +98,41 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
       <div
         ref={trackRef}
         onClick={handleTrackClick}
-        className="relative h-2 bg-navy-input border border-navy-border cursor-pointer"
+        className="relative h-3 rounded-full cursor-pointer"
+        style={{ background: 'rgba(255,255,255,0.12)' }}
       >
         {/* Gold fill */}
         <div
-          className="absolute inset-y-0 left-0 bg-gold pointer-events-none"
-          style={{ width: `${value}%` }}
+          className="absolute inset-y-0 left-0 rounded-full pointer-events-none"
+          style={{ width: `${value}%`, background: 'var(--color-gold)' }}
         />
 
-        {/* Knob */}
+        {/* Knob — 28px gold circle with white border */}
         <div
           onMouseDown={handleKnobMouseDown}
           onTouchStart={handleKnobTouchStart}
           className={[
             'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
-            'w-5 h-5 rounded-full bg-gold border-2 border-white shadow-lg',
-            'cursor-grab active:cursor-grabbing',
-            'hover:shadow-[0_0_0_4px_rgba(212,168,83,0.25)]',
+            'w-7 h-7 rounded-full cursor-grab active:cursor-grabbing',
+            'shadow-lg',
             knobTransition,
           ].join(' ')}
-          style={{ left: `${value}%` }}
+          style={{
+            left: `${value}%`,
+            background: 'var(--color-gold)',
+            border: '3px solid white',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
         />
       </div>
 
       {/* Tick marks */}
-      <div className="flex justify-between mt-2 px-0.5">
+      <div className="flex justify-between mt-2">
         {[0, 25, 50, 75, 100].map(tick => (
           <span
             key={tick}
-            className={[
-              'font-ibm text-[9px] tabular-nums transition-colors duration-150',
-              value >= tick && tick > 0 ? 'text-gold opacity-60' : 'text-[#2e3a4a]',
-            ].join(' ')}
+            className="font-nunito text-[10px] tabular-nums transition-colors duration-150"
+            style={{ color: value >= tick && tick > 0 ? 'rgba(240,192,64,0.7)' : 'rgba(255,248,240,0.25)' }}
           >
             {tick}
           </span>
@@ -149,7 +141,7 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
 
       {/* Zero-confidence hint */}
       {value === 0 && (
-        <p className="font-ibm text-[10px] text-[#4a5568] mt-1 leading-snug">
+        <p className="font-nunito text-xs mt-1 leading-snug" style={{ color: 'rgba(255,248,240,0.35)' }}>
           0 = no confidence (no points risked)
         </p>
       )}

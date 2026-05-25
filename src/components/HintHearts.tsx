@@ -5,13 +5,12 @@ interface HintHeartsProps {
   totalHintsRemaining: number;
 }
 
-/** Inline SVG heart path. */
 function HeartIcon({ filled, animating }: { filled: boolean; animating: boolean }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       className={animating ? 'animate-heart-deflate' : ''}
       style={{ display: 'block' }}
     >
@@ -26,7 +25,6 @@ function HeartIcon({ filled, animating }: { filled: boolean; animating: boolean 
 }
 
 export default function HintHearts({ totalHintsRemaining }: HintHeartsProps) {
-  // Track which heart index is currently animating (the one that just became empty).
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
   const prevTotalRef = useRef(totalHintsRemaining);
 
@@ -35,7 +33,6 @@ export default function HintHearts({ totalHintsRemaining }: HintHeartsProps) {
     prevTotalRef.current = totalHintsRemaining;
 
     if (totalHintsRemaining < prev) {
-      // The heart at index `totalHintsRemaining` just became empty — animate it.
       setAnimatingIndex(totalHintsRemaining);
       const t = setTimeout(() => setAnimatingIndex(null), 350);
       return () => clearTimeout(t);
@@ -44,12 +41,9 @@ export default function HintHearts({ totalHintsRemaining }: HintHeartsProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      {/* Label */}
-      <span className="font-ibm text-[9px] tracking-[0.2em] text-[#4a5568] uppercase">
+      <span className="font-nunito text-[10px] uppercase tracking-wide" style={{ color: 'rgba(27,58,107,0.5)' }}>
         Hints
       </span>
-
-      {/* Seven hearts */}
       <div className="flex items-center gap-1">
         {Array.from({ length: 7 }, (_, i) => (
           <HeartIcon
@@ -59,10 +53,8 @@ export default function HintHearts({ totalHintsRemaining }: HintHeartsProps) {
           />
         ))}
       </div>
-
-      {/* Depletion message */}
       {totalHintsRemaining === 0 && (
-        <p className="font-ibm text-[10px] text-red-400 leading-snug">
+        <p className="font-nunito text-[10px] text-red-500 leading-snug">
           No hints remaining
         </p>
       )}

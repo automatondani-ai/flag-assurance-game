@@ -16,14 +16,9 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
   const [assurance, setAssurance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Track which country code's flag has finished loading.
-  // Comparing against currentCountry.code gives a synchronous imgLoaded
-  // signal: it becomes false the instant the country changes (no async lag).
   const [loadedCode, setLoadedCode] = useState<string | null>(null);
   const imgLoaded = loadedCode === currentCountry.code;
 
-  // Reset local controls and clear stale loaded-code on each new question,
-  // ensuring the input/slider are blank before the new flag appears.
   useEffect(() => {
     setInput('');
     setAssurance(0);
@@ -42,270 +37,246 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
     if (e.key === 'Enter') handleSubmit();
   }
 
-  const round = state.currentIndex + 1;
+  const round       = state.currentIndex + 1;
   const progressPct = state.totalQuestions > 0
     ? (state.currentIndex / state.totalQuestions) * 100
     : 0;
 
+  const deco = (
+    pos: { top?: string; left?: string; right?: string; bottom?: string },
+    rot = '0deg',
+    size = '2.5rem',
+  ) => ({
+    position: 'absolute' as const,
+    ...pos,
+    fontSize: size,
+    transform: `rotate(${rot})`,
+    opacity: 0.7,
+    pointerEvents: 'none' as const,
+    userSelect: 'none' as const,
+    zIndex: 1,
+    lineHeight: 1,
+  });
+
   return (
-    <div className="min-h-screen bg-navy flex items-center justify-center px-4 py-8">
-      {/* Grid overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.025]"
-        style={{
-          backgroundImage:
-            'linear-gradient(#D4A853 1px, transparent 1px), linear-gradient(90deg, #D4A853 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }}
-      />
+    <div className="phase-enter min-h-screen px-4 py-8" style={{ background: 'var(--color-bg-navy)' }}>
 
-      <div className="relative w-full max-w-5xl">
-        {/* Top bar */}
-        <div className="flex items-center gap-4 mb-3">
-          <div className="h-px flex-1 bg-gold opacity-20" />
-          <span className="font-playfair text-gold text-sm tracking-widest opacity-70 uppercase">
-            Flag Assurance
+      {/* ── Top bar ─────────────────────────────────────────────────── */}
+      <div className="w-full max-w-5xl mx-auto mb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-px flex-1" style={{ background: 'rgba(240,192,64,0.25)' }} />
+          <span className="font-fredoka text-sm tracking-widest uppercase" style={{ color: 'rgba(255,248,240,0.4)' }}>
+            Flag Explorer
           </span>
-          <div className="h-px flex-1 bg-gold opacity-20" />
+          <div className="h-px flex-1" style={{ background: 'rgba(240,192,64,0.25)' }} />
         </div>
-
-        {/* ── Top progress bar (full width) ───────────────────────────── */}
-        <div className="relative h-1.5 bg-navy-input border border-navy-border mb-6 overflow-hidden">
+        <div className="relative h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
           <div
-            className="absolute inset-y-0 left-0 bg-gold transition-all duration-500"
-            style={{ width: `${progressPct}%` }}
+            className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+            style={{ width: `${progressPct}%`, background: 'var(--color-gold)' }}
           />
-          {/* Completion label — appears at the fill edge when > 5% */}
-          {progressPct > 5 && (
-            <span
-              className="absolute right-2 top-1/2 -translate-y-1/2 font-ibm text-[9px] text-gold opacity-60 tabular-nums"
-            >
-              {Math.round(progressPct)}%
-            </span>
-          )}
         </div>
+      </div>
 
-        {/* Two-panel layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-6">
+      {/* ── Two-column layout ──────────────────────────────────────── */}
+      <div className="relative w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-6 items-start">
 
-          {/* ── LEFT PANEL ─────────────────────────────────────────── */}
-          <div className="bg-navy-card border border-navy-border p-6 relative">
-            {/* Corner accents */}
-            <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-gold opacity-40" />
-            <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-gold opacity-40" />
-            <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-gold opacity-40" />
-            <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-gold opacity-40" />
+        {/* ── LEFT PANEL ──────────────────────────────────────────── */}
+        <div>
+          <div className="relative flex justify-center">
+            {/* Decorative emojis */}
+            <span style={deco({ top: '-18px', left: '16px' }, '-12deg', '2.5rem')}>🌍</span>
+            <span style={deco({ top: '-20px', right: '28px' }, '10deg', '2rem')}>✈️</span>
+            <span style={deco({ bottom: '-12px', left: '8px' }, '-8deg', '2rem')}>🎯</span>
+            <span style={deco({ bottom: '-18px', right: '18px' }, '15deg', '2rem')}>🌟</span>
 
-            {/* Flag image — aspect-ratio container, light bg for contrast */}
-            <div className="aspect-[3/2] w-full mb-6 bg-slate-100 border border-slate-300 rounded-sm overflow-hidden relative">
-
-              {/* Skeleton placeholder — visible while the flag is loading */}
-              {!imgLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center animate-pulse bg-slate-200">
-                  <span className="text-4xl select-none text-slate-400">🏳</span>
-                </div>
-              )}
-
-              {/* Flag — always in the DOM so onLoad fires; opacity gates visibility */}
-              <img
-                src={currentCountry.flag}
-                alt="Identify this flag"
-                onLoad={() => setLoadedCode(currentCountry.code)}
-                className={[
-                  'w-full h-full object-contain p-2 transition-opacity duration-300',
-                  imgLoaded ? 'opacity-100' : 'opacity-0',
-                ].join(' ')}
-              />
-            </div>
-
-            {/* Progressive hint display — appears below the flag once ≥1 hint used */}
-            <HintDisplay
-              hintDisplay={state.hintDisplay}
-              hintsUsed={state.hintsUsed}
-            />
-
-            {/* Feedback area — always in DOM to prevent layout shift.
-                Content is guarded by isFeedbackVisible (lastCorrect !== null) so
-                the ternary inside never evaluates with null, eliminating the
-                "Wrong — it was [new country]" flash during the CSS fade-out. */}
+            {/* Circle stage */}
             <div
-              className={[
-                'mb-5 px-4 py-3 border transition-all duration-300 min-h-[3.5rem] flex items-center justify-between',
-                isFeedbackVisible
-                  ? state.lastCorrect
-                    ? 'border-emerald-700 bg-emerald-950 bg-opacity-40 opacity-100'
-                    : 'border-red-800 bg-red-950 bg-opacity-40 opacity-100'
-                  : 'border-transparent opacity-0',
-              ].join(' ')}
+              className="circle-stage w-full"
+              style={{
+                maxWidth: '520px',
+                paddingTop: '4rem',
+                paddingBottom: '1.5rem',
+                paddingLeft: '2rem',
+                paddingRight: '2rem',
+                gap: '0.75rem',
+              }}
             >
-              {isFeedbackVisible && (
-                <>
-                  <span
-                    className={[
-                      'font-ibm text-sm tracking-wide',
-                      state.lastCorrect ? 'text-emerald-400' : 'text-red-400',
-                    ].join(' ')}
-                  >
-                    {state.lastCorrect
-                      ? state.lastResolvedName !== null &&
-                        state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
-                        ? `Correct! (matched: ${state.lastResolvedName})`
-                        : 'Correct, Good Job.'
-                      : `Wrong — it was ${currentCountry.name}`}
-                  </span>
-
-                  {/* Delta — keyed by currentIndex so it remounts (and re-animates) each round */}
-                  {state.lastDelta !== null && (
-                    <span
-                      key={`delta-${state.currentIndex}`}
-                      className={[
-                        'font-ibm text-lg font-semibold tabular-nums animate-delta-pop',
-                        state.lastDelta >= 0 ? 'text-emerald-400' : 'text-red-400',
-                      ].join(' ')}
-                    >
-                      {state.lastDelta >= 0 ? '+' : ''}
-                      {state.lastDelta}
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* ── Hint row: hearts (budget) + hint button ─────────────────── */}
-            <div className="flex items-end justify-between mb-4">
-              <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
-
-              {/* HINT button
-                  - Disabled only when totalHintsRemaining === 0 (opacity + no hover)
-                  - The reducer silently ignores extra presses when all letters for
-                    the current round are already revealed, so no need to disable here */}
-              <button
-                onClick={onHint}
-                disabled={state.totalHintsRemaining === 0}
-                className={[
-                  'font-ibm text-sm px-4 py-2 border transition-colors duration-150',
-                  state.totalHintsRemaining > 0
-                    ? 'border-gold text-gold bg-transparent hover:bg-gold hover:text-navy cursor-pointer'
-                    : 'border-gold/30 text-gold/30 bg-transparent opacity-40 cursor-not-allowed',
-                ].join(' ')}
+              {/* Flag */}
+              <div
+                className="relative flex-shrink-0"
+                style={{
+                  width: '100%',
+                  maxWidth: '300px',
+                  aspectRatio: '3 / 2',
+                  background: 'white',
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  border: '2px solid rgba(0,0,0,0.08)',
+                }}
               >
-                {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints Left'}
-              </button>
+                {!imgLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center animate-pulse" style={{ background: '#e2e8f0' }}>
+                    <span className="text-4xl select-none text-slate-400">🏳</span>
+                  </div>
+                )}
+                <img
+                  src={currentCountry.flag}
+                  alt="Identify this flag"
+                  onLoad={() => setLoadedCode(currentCountry.code)}
+                  className="w-full h-full object-contain p-1 transition-opacity duration-300"
+                  style={{ opacity: imgLoaded ? 1 : 0 }}
+                />
+              </div>
+
+              {/* Progressive hint */}
+              <HintDisplay hintDisplay={state.hintDisplay} hintsUsed={state.hintsUsed} />
+
+              {/* Answer input */}
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isFeedbackVisible}
+                placeholder="Country name…"
+                className="pill-input"
+                style={{
+                  maxWidth: '320px',
+                  width: '100%',
+                  textAlign: 'center',
+                  opacity: isFeedbackVisible ? 0.5 : 1,
+                }}
+              />
+
+              {/* Hint row */}
+              <div
+                className="flex items-center justify-between"
+                style={{ width: '100%', maxWidth: '320px' }}
+              >
+                <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
+
+                <button
+                  onClick={onHint}
+                  disabled={state.totalHintsRemaining === 0}
+                  className="font-fredoka text-sm px-4 py-2 rounded-full border-2 transition-colors duration-150"
+                  style={
+                    state.totalHintsRemaining > 0
+                      ? { borderColor: 'var(--color-gold)', color: 'var(--color-gold)', background: 'transparent', cursor: 'pointer' }
+                      : { borderColor: 'rgba(240,192,64,0.25)', color: 'rgba(240,192,64,0.3)', background: 'transparent', cursor: 'not-allowed' }
+                  }
+                >
+                  {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints'}
+                </button>
+              </div>
             </div>
+          </div>
 
-            {/* Answer input */}
-            <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-2">
-              Your Answer
-            </label>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isFeedbackVisible}
-              placeholder="Country name…"
-              className="w-full bg-navy-input border border-navy-border text-[#e8e0d0] font-ibm text-sm px-4 py-3 outline-none placeholder-[#2e3a4a] tracking-wide focus:border-gold transition-colors duration-200 mb-6 disabled:opacity-40"
-            />
+          {/* ── Below-circle controls ─────────────────────────────── */}
+          <div className="mt-6 mx-auto space-y-5" style={{ maxWidth: '520px' }}>
+            <AssuranceSlider value={assurance} onChange={setAssurance} />
 
-            {/* Assurance slider */}
-            <div className="mb-6">
-              <AssuranceSlider value={assurance} onChange={setAssurance} />
-            </div>
-
-            {/* Submit — pulses when ready */}
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
               className={[
-                'w-full font-ibm text-sm tracking-[0.25em] uppercase py-3 px-6 transition-colors duration-200',
-                canSubmit
-                  ? 'bg-gold text-navy font-semibold hover:bg-[#e0b862] cursor-pointer animate-btn-pulse'
-                  : 'bg-navy-border text-[#3a4557] cursor-not-allowed',
+                'btn-gold w-full py-4 text-xl uppercase tracking-wide',
+                canSubmit ? 'animate-btn-pulse' : '',
               ].join(' ')}
+              style={{ opacity: canSubmit ? 1 : 0.4, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
             >
               Submit
             </button>
+
+            {/* Feedback — below submit */}
+            <div className="min-h-[4.5rem] flex flex-col items-center justify-center">
+              {isFeedbackVisible && (
+                <>
+                  <p
+                    className="font-fredoka text-xl text-center"
+                    style={{ color: state.lastCorrect ? '#34d399' : '#f87171' }}
+                  >
+                    {state.lastCorrect
+                      ? state.lastResolvedName !== null &&
+                        state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
+                        ? `✓ Correct! (matched: ${state.lastResolvedName})`
+                        : '✓ Correct, Good Job!'
+                      : `✗ Wrong — it was ${currentCountry.name}`}
+                  </p>
+
+                  {state.lastDelta !== null && (
+                    <p
+                      key={`delta-${state.currentIndex}`}
+                      className="font-fredoka text-3xl animate-delta-pop mt-1"
+                      style={{ color: state.lastDelta >= 0 ? 'var(--color-gold)' : '#f87171' }}
+                    >
+                      {state.lastDelta >= 0 ? '+' : ''}{state.lastDelta}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </div>
+        </div>
 
-          {/* ── RIGHT PANEL ────────────────────────────────────────── */}
-          <div className="flex flex-col gap-4">
-
-            {/* Player name card */}
-            <div className="bg-navy-card border border-navy-border p-5">
-              <p className="font-ibm text-[10px] tracking-[0.3em] text-[#4a5568] uppercase mb-1">
+        {/* ── RIGHT PANEL — score sidebar ──────────────────────────── */}
+        <div className="md:sticky md:top-6 self-start">
+          <div
+            className="rounded-2xl p-6 space-y-4"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <div>
+              <p className="font-nunito text-xs uppercase tracking-widest mb-0.5" style={{ color: 'rgba(255,248,240,0.38)' }}>
                 Commander
               </p>
-              <p className="font-playfair text-xl text-[#e8e0d0] leading-tight truncate">
+              <p className="font-fredoka text-xl truncate" style={{ color: 'var(--color-cream)' }}>
                 {state.playerName}
               </p>
             </div>
 
-            {/* Score card */}
-            <div className="bg-navy-card border border-navy-border p-5 relative overflow-hidden flex-1">
-              {/* Decorative watermark */}
-              <span className="absolute -right-2 -bottom-4 font-playfair text-[7rem] text-[#D4A853] opacity-[0.04] leading-none select-none pointer-events-none">
-                S
-              </span>
+            <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
-              <p className="font-ibm text-[10px] tracking-[0.3em] text-[#4a5568] uppercase mb-3">
-                Score
-              </p>
-              <div
-                className={[
-                  'font-ibm text-5xl font-semibold tabular-nums leading-none mb-1 transition-colors duration-300',
-                  state.score >= 0 ? 'text-gold' : 'text-red-400',
-                ].join(' ')}
+            <div>
+              <p className="font-fredoka text-sm uppercase" style={{ color: 'rgba(255,248,240,0.45)' }}>Score</p>
+              <p
+                className="font-fredoka tabular-nums leading-none"
+                style={{ fontSize: '3.25rem', color: state.score >= 0 ? 'var(--color-gold)' : '#f87171' }}
               >
-                {state.score >= 0 ? '+' : ''}
-                {state.score}
-              </div>
-
-              <div className="h-px bg-navy-border my-4" />
-
-              <p className="font-ibm text-[10px] tracking-[0.3em] text-[#4a5568] uppercase mb-1">
-                Round
+                {state.score >= 0 ? '+' : ''}{state.score}
               </p>
-              <p className="font-ibm text-2xl text-[#e8e0d0] tabular-nums">
-                {round}
-                <span className="text-sm text-[#4a5568] ml-1">
-                  / {state.totalQuestions}
-                </span>
-              </p>
+            </div>
 
-              {/* Mini progress pip */}
-              <div className="mt-4 h-1 bg-navy-input border border-navy-border">
+            <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+            <div>
+              <p className="font-nunito text-sm" style={{ color: 'rgba(255,248,240,0.6)' }}>
+                Round{' '}
+                <span className="font-nunito font-bold" style={{ color: 'var(--color-cream)' }}>{round}</span>
+                {' '}of {state.totalQuestions}
+              </p>
+              <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
                 <div
-                  className="h-full bg-gold transition-all duration-500"
-                  style={{ width: `${progressPct}%` }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${progressPct}%`, background: 'var(--color-gold)' }}
                 />
               </div>
-              <div className="flex justify-between mt-1">
-                <span className="font-ibm text-[9px] text-[#2e3a4a]">0</span>
-                <span className="font-ibm text-[9px] text-[#2e3a4a]">
-                  {state.totalQuestions}
-                </span>
-              </div>
             </div>
 
-            {/* Rules card */}
-            <div className="bg-navy-card border border-navy-border p-4">
-              <p className="font-ibm text-[10px] tracking-[0.25em] text-[#3a4557] uppercase mb-2">
-                Rules
-              </p>
-              <p className="font-ibm text-[11px] text-[#4a5568] leading-relaxed">
-                Higher assurance = higher reward or penalty. Score can go negative.
-              </p>
+            <div className="flex justify-between text-xl" style={{ opacity: 0.18 }}>
+              <span>🗺️</span>
+              <span>🧭</span>
             </div>
+
+            <p className="font-nunito text-xs leading-relaxed" style={{ color: 'rgba(255,248,240,0.28)' }}>
+              Higher assurance = higher reward or penalty. Score can go negative.
+            </p>
           </div>
         </div>
 
-        {/* Footer rule */}
-        <div className="flex items-center gap-3 mt-6">
-          <div className="h-px flex-1 bg-navy-border" />
-          <span className="font-ibm text-[#2e3a4a] text-xs tracking-widest">◆</span>
-          <div className="h-px flex-1 bg-navy-border" />
-        </div>
       </div>
     </div>
   );

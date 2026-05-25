@@ -2,46 +2,166 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Flag fade-in ─────────────────────────────────────────────────────────── */
+/* ── CSS custom properties ──────────────────────────────────────────────────── */
+:root {
+  --color-bg-green:  #4A9B7F;
+  --color-bg-navy:   #1B3A6B;
+  --color-bg-sky:    #5BA4CF;
+  --color-bg-coral:  #E8635A;
+  --color-bg-yellow: #F5E6A3;
+  --color-bg-teal:   #2D7D6F;
+  --color-cream:     #FFF8F0;
+  --color-gold:      #F0C040;
+  --color-navy-text: #1B3A6B;
+  --color-white:     #FFFFFF;
+}
+
+/* ── Global reset & body ────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* ── Phase-transition animation ─────────────────────────────────────────────── */
+.phase-enter { animation: fadeSlideIn 400ms ease forwards; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Circle stage ───────────────────────────────────────────────────────────── */
+/* The primary content container on every screen.
+   Content inside is centred; decorative elements break out via overflow:visible. */
+.circle-stage {
+  border-radius: 50%;
+  background: var(--color-cream);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  aspect-ratio: 1 / 1;
+}
+
+/* On small screens the circle becomes a rounded rectangle for usability */
+@media (max-width: 767px) {
+  .circle-stage {
+    border-radius: 2rem;
+    aspect-ratio: auto;
+  }
+}
+
+/* ── Pill input ─────────────────────────────────────────────────────────────── */
+.pill-input {
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid var(--color-navy-text);
+  background: var(--color-cream);
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+  color: var(--color-navy-text);
+}
+.pill-input:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(240, 192, 64, 0.30);
+}
+.pill-input::placeholder {
+  color: rgba(27, 58, 107, 0.38);
+}
+
+/* ── Gold pill button ───────────────────────────────────────────────────────── */
+.btn-gold {
+  background: var(--color-gold);
+  color: var(--color-navy-text);
+  font-family: 'Fredoka One', cursive;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 200ms, filter 200ms;
+}
+.btn-gold:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.08);
+}
+.btn-gold:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Navy pill button ───────────────────────────────────────────────────────── */
+.btn-navy {
+  background: var(--color-bg-navy);
+  color: var(--color-cream);
+  font-family: 'Fredoka One', cursive;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 200ms, filter 200ms;
+}
+.btn-navy:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+/* ── Existing animation keyframes (kept for Tailwind animate-* utilities) ────── */
 @keyframes flag-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* ── Score delta pop ──────────────────────────────────────────────────────── */
-/* Snaps in from small, overshoots slightly, settles at 1× */
 @keyframes delta-pop {
   0%   { transform: scale(0.65); opacity: 0; }
   55%  { transform: scale(1.2);  opacity: 1; }
   100% { transform: scale(1);    opacity: 1; }
 }
 
-/* ── Submit button pulse ──────────────────────────────────────────────────── */
-/* Gentle gold glow rings out and fades */
 @keyframes btn-pulse {
-  0%, 100% { box-shadow: 0 0 0 0   rgba(212, 168, 83, 0.00); }
-  50%       { box-shadow: 0 0 0 7px rgba(212, 168, 83, 0.28); }
+  0%, 100% { box-shadow: 0 0 0 0   rgba(240, 192, 64, 0.00); }
+  50%       { box-shadow: 0 0 0 8px rgba(240, 192, 64, 0.30); }
 }
 
-/* ── Range input — remove default thumb on WebKit so our overlay works ────── */
+/* ── Range-input overrides (carnival style — circular gold knob) ─────────────── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  background: #D4A853;
-  border-radius: 0;
-  cursor: pointer;
-  margin-top: -6px;
+  width: 28px;
+  height: 28px;
+  background: var(--color-gold);
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+  margin-top: -8px;
 }
 input[type='range']::-webkit-slider-runnable-track {
-  height: 2px;
+  height: 12px;
   background: transparent;
+  border-radius: 9999px;
 }
 input[type='range']::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: #D4A853;
-  border: none;
-  border-radius: 0;
-  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  background: var(--color-gold);
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+}
+input[type='range']::-moz-range-track {
+  height: 12px;
+  border-radius: 9999px;
+  background: transparent;
 }
