@@ -9,7 +9,7 @@ interface WelcomeScreenProps {
 }
 
 const ALL_CONTINENTS: Continent[] = ['Africa', 'Europe', 'Americas', 'Asia', 'Oceania'];
-const GAME_LENGTHS = [25, 50, 100, 150, 9999] as const;
+const GAME_LENGTHS = [10, 25, 50, 100, 150, 9999] as const;
 const ALL_SENTINEL = 9999;
 
 const REGION_OPTIONS: { id: Continent; label: string }[] = [
