@@ -76,7 +76,7 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
         </div>
 
         {/* Two-panel layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-6">
 
           {/* ── LEFT PANEL ─────────────────────────────────────────── */}
           <div className="bg-navy-card border border-navy-border p-6 relative">
@@ -86,13 +86,13 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
             <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-gold opacity-40" />
             <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-gold opacity-40" />
 
-            {/* Flag image — fixed h-56, object-contain, fade-in on each new country */}
-            <div className="border-2 border-navy-border mb-6 bg-navy-input flex items-center justify-center h-56 overflow-hidden">
+            {/* Flag image — aspect-ratio container, light bg for contrast */}
+            <div className="aspect-[3/2] w-full mb-6 bg-slate-100 border border-slate-300 rounded-sm overflow-hidden">
               <img
                 key={currentCountry.code}
                 src={currentCountry.flag}
                 alt="Identify this flag"
-                className="w-full h-full object-contain animate-flag-fade-in"
+                className="w-full h-full object-contain p-2 animate-flag-fade-in"
               />
             </div>
 
@@ -114,7 +114,10 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
                 ].join(' ')}
               >
                 {state.lastCorrect
-                  ? 'Correct, Good Job.'
+                  ? state.lastResolvedName !== null &&
+                    state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
+                    ? `Correct! (matched: ${state.lastResolvedName})`
+                    : 'Correct, Good Job.'
                   : `Wrong — it was ${currentCountry.name}`}
               </span>
 

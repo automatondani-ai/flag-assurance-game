@@ -11,8 +11,25 @@ export function normalizeInput(input: string): string {
   return input.trim().toLowerCase();
 }
 
-export function checkAnswer(input: string, correct: string): boolean {
-  return normalizeInput(input) === normalizeInput(correct);
+import Fuse from 'fuse.js';
+import { COUNTRIES } from '../data/countries';
+
+const fuse = new Fuse(COUNTRIES, {
+  keys: ['name'],
+  threshold: 0.35,
+  includeScore: true,
+});
+
+export function checkAnswer(input: string, correctName: string): { correct: boolean; resolvedName: string } {
+  const normalized = input.trim().toLowerCase();
+  const results = fuse.search(normalized);
+
+  if (results.length === 0) return { correct: false, resolvedName: correctName };
+
+  const bestMatch = results[0].item.name;
+  const correct = bestMatch.toLowerCase() === correctName.toLowerCase();
+
+  return { correct, resolvedName: bestMatch };
 }
 
 /**

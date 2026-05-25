@@ -1,25 +1,77 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import type { Continent } from '../types';
+import { COUNTRIES } from '../data/countries';
 
 interface WelcomeScreenProps {
-  onStart: (name: string) => void;
+  onStart: (name: string, continents: Continent[], length: number) => void;
 }
+
+const ALL_CONTINENTS: Continent[] = ['Africa', 'Europe', 'Americas', 'Asia', 'Oceania'];
+const GAME_LENGTHS = [25, 50, 100, 150] as const;
+
+const REGION_OPTIONS: { id: Continent; label: string }[] = [
+  { id: 'Africa',   label: '🌍 Africa'   },
+  { id: 'Europe',   label: '🌍 Europe'   },
+  { id: 'Americas', label: '🌎 Americas' },
+  { id: 'Asia',     label: '🌏 Asia'     },
+  { id: 'Oceania',  label: '🌊 Oceania'  },
+];
 
 export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const [name, setName] = useState('');
+  const [selectedContinents, setSelectedContinents] = useState<Set<Continent>>(
+    new Set(ALL_CONTINENTS),
+  );
+  const [gameLength, setGameLength] = useState<number>(25);
 
   const trimmed = name.trim();
-  const canStart = trimmed.length > 0;
+  const isWorldSelected = selectedContinents.size === ALL_CONTINENTS.length;
+
+  const pool = useMemo(
+    () => COUNTRIES.filter(c => selectedContinents.has(c.continent)),
+    [selectedContinents],
+  );
+
+  const effectiveLength = Math.min(gameLength, pool.length);
+  const showCapNote = pool.length > 0 && pool.length < gameLength;
+  const canStart = trimmed.length > 0 && pool.length > 0;
+
+  function toggleContinent(continent: Continent) {
+    setSelectedContinents(prev => {
+      if (prev.has(continent)) {
+        if (prev.size === 1) return prev; // never allow empty selection
+        const next = new Set(prev);
+        next.delete(continent);
+        return next;
+      }
+      return new Set([...prev, continent]);
+    });
+  }
+
+  function selectAll() {
+    setSelectedContinents(new Set(ALL_CONTINENTS));
+  }
 
   function handleSubmit() {
-    if (canStart) onStart(trimmed);
+    if (canStart) onStart(trimmed, Array.from(selectedContinents), effectiveLength);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') handleSubmit();
   }
 
+  // Shared chip class builder
+  function chipClass(active: boolean) {
+    return [
+      'font-ibm text-xs px-3 py-1.5 border transition-all duration-150 cursor-pointer select-none',
+      active
+        ? 'border-gold bg-gold/10 text-gold'
+        : 'border-navy-border text-[#4a5568] hover:border-[#3a4a5a] hover:text-[#6b7a8d]',
+    ].join(' ');
+  }
+
   return (
-    <div className="min-h-screen bg-navy flex items-center justify-center px-4">
+    <div className="min-h-screen bg-navy flex items-center justify-center px-4 py-8">
       {/* Subtle grid overlay */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.03]"
@@ -52,28 +104,89 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           Test your flags. Wager your confidence.
         </p>
 
-        {/* Bottom rule */}
-        <div className="h-px bg-navy-border mb-10" />
+        <div className="h-px bg-navy-border mb-8" />
 
         {/* Card */}
-        <div className="bg-navy-card border border-navy-border p-8">
-          {/* Corner accents */}
-          <div className="absolute top-[7.5rem] left-0 w-3 h-3 border-t-2 border-l-2 border-gold opacity-60" />
-          <div className="absolute top-[7.5rem] right-0 w-3 h-3 border-t-2 border-r-2 border-gold opacity-60" />
+        <div className="bg-navy-card border border-navy-border p-8 space-y-6">
 
-          <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-2">
-            Commander Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter your name"
-            maxLength={32}
-            className="w-full bg-navy-input border border-navy-border text-[#e8e0d0] font-ibm text-sm px-4 py-3 outline-none placeholder-[#2e3a4a] tracking-wide focus:border-gold transition-colors duration-200 mb-6"
-          />
+          {/* ── Name input ──────────────────────────────────────────────── */}
+          <div>
+            <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-2">
+              Commander Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter your name"
+              maxLength={32}
+              className="w-full bg-navy-input border border-navy-border text-[#e8e0d0] font-ibm text-sm px-4 py-3 outline-none placeholder-[#2e3a4a] tracking-wide focus:border-gold transition-colors duration-200"
+            />
+          </div>
 
+          <div className="h-px bg-navy-border" />
+
+          {/* ── Region Selector ─────────────────────────────────────────── */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <label className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase">
+                Choose Your Region
+              </label>
+              <span className="font-ibm text-[10px] text-[#4a5568] tabular-nums">
+                {pool.length} flags available
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {REGION_OPTIONS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => toggleContinent(id)}
+                  className={chipClass(selectedContinents.has(id))}
+                >
+                  {label}
+                </button>
+              ))}
+              <button onClick={selectAll} className={chipClass(isWorldSelected)}>
+                🌐 World
+              </button>
+            </div>
+          </div>
+
+          <div className="h-px bg-navy-border" />
+
+          {/* ── Game Length ─────────────────────────────────────────────── */}
+          <div>
+            <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-3">
+              Game Length
+            </label>
+
+            <div className="grid grid-cols-4 gap-2">
+              {GAME_LENGTHS.map(n => (
+                <button
+                  key={n}
+                  onClick={() => setGameLength(n)}
+                  className={chipClass(gameLength === n)}
+                >
+                  <span className="block text-center tabular-nums">{n}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Cap note — shown when selected pool is smaller than game length */}
+            <div className="mt-2 min-h-[1.25rem]">
+              {showCapNote && (
+                <p className="font-ibm text-[11px] text-gold opacity-70 leading-snug">
+                  Only {pool.length} flags available for this selection
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="h-px bg-navy-border" />
+
+          {/* ── Start button ─────────────────────────────────────────────── */}
           <button
             onClick={handleSubmit}
             disabled={!canStart}
@@ -85,6 +198,11 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             ].join(' ')}
           >
             Begin Mission
+            {canStart && (
+              <span className="ml-2 font-normal opacity-70 tracking-normal normal-case">
+                · {effectiveLength} rounds
+              </span>
+            )}
           </button>
         </div>
 

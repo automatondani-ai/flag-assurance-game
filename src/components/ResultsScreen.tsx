@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { GameState } from '../types';
 import { getPerformanceTier } from '../utils/gameUtils';
+import { getLeaderboard, formatDuration } from '../utils/leaderboard';
+
+function wikiUrl(name: string) {
+  return `https://en.wikipedia.org/wiki/${name.replace(/ /g, '_')}`;
+}
 
 interface ResultsScreenProps {
   state: GameState;
@@ -10,6 +15,14 @@ interface ResultsScreenProps {
 export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
   const { message, percentage } = getPerformanceTier(state.correctCount, state.totalQuestions);
   const isPositive = state.score >= 0;
+  const [showMissed, setShowMissed] = useState(false);
+
+  // Read leaderboard once on mount (it was saved before this component rendered).
+  const leaderboard = useMemo(() => getLeaderboard(), []);
+  const currentPlayerIndex = leaderboard.findIndex(
+    e => e.name === state.playerName && e.score === state.score && e.percentage === percentage,
+  );
+  const isInTopTen = currentPlayerIndex !== -1;
 
   // Count-up: animates from 0 → actual score over 1.2s with ease-out cubic
   const [displayScore, setDisplayScore] = useState(0);
@@ -157,6 +170,123 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
           >
             Start Again
           </button>
+        </div>
+
+        {/* Missed countries */}
+        <div className="mt-4 bg-navy-card border border-navy-border">
+          <button
+            onClick={() => setShowMissed(v => !v)}
+            className="w-full font-ibm text-xs tracking-[0.2em] uppercase px-6 py-4 text-left flex items-center justify-between text-[#6b7a8d] hover:text-gold transition-colors duration-150"
+          >
+            <span>Countries You Missed</span>
+            <span>{showMissed ? 'Hide ▲' : 'Show Missed Flags ▼'}</span>
+          </button>
+
+          {showMissed && (
+            <div className="border-t border-navy-border px-6 pb-6 pt-4">
+              {state.missedCountries.length === 0 ? (
+                <p className="font-ibm text-sm text-[#9aa3b0] text-center py-4">
+                  🏆 Perfect score! No missed flags.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {state.missedCountries.map(country => (
+                    <div
+                      key={country.code}
+                      className="bg-navy-input border border-navy-border p-3 hover:border-gold transition-colors duration-150"
+                    >
+                      <div className="bg-white flex items-center justify-center h-12 mb-2">
+                        <img
+                          src={country.flag}
+                          alt={country.name}
+                          className="h-12 w-full object-contain"
+                        />
+                      </div>
+                      <p className="font-ibm text-xs font-semibold text-[#e8e0d0] mb-1 leading-snug">
+                        {country.name}
+                      </p>
+                      <a
+                        href={wikiUrl(country.name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-ibm text-[10px] text-gold opacity-70 hover:opacity-100 transition-opacity"
+                      >
+                        Learn more →
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Leaderboard */}
+        <div className="mt-4 bg-navy-card border border-navy-border">
+          <div className="px-6 py-3 border-b border-navy-border">
+            <span className="font-ibm text-xs tracking-[0.2em] uppercase text-[#6b7a8d]">
+              🏆 Global Top 10
+            </span>
+          </div>
+
+          {leaderboard.length === 0 ? (
+            <p className="font-ibm text-xs text-[#4a5568] text-center py-6">No scores recorded yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full font-ibm text-[11px]">
+                <thead>
+                  <tr className="border-b border-navy-border text-[#4a5568] tracking-[0.08em] uppercase">
+                    <th className="px-3 py-2 text-left w-8">#</th>
+                    <th className="px-3 py-2 text-left">Name</th>
+                    <th className="px-3 py-2 text-right">Score</th>
+                    <th className="px-3 py-2 text-right">Acc</th>
+                    <th className="px-3 py-2 text-right">Time</th>
+                    <th className="px-3 py-2 text-left">Region</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((entry, i) => {
+                    const isCurrent = i === currentPlayerIndex;
+                    return (
+                      <tr
+                        key={i}
+                        className={[
+                          'border-b border-navy-border/40',
+                          isCurrent
+                            ? 'bg-gold/10 text-gold'
+                            : 'text-[#9aa3b0] hover:bg-navy-input',
+                        ].join(' ')}
+                      >
+                        <td className="px-3 py-2 text-[#4a5568]">#{i + 1}</td>
+                        <td className="px-3 py-2 font-semibold max-w-[100px] truncate">{entry.name}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {entry.score >= 0 ? '+' : ''}{entry.score}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">{entry.percentage}%</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatDuration(entry.duration)}</td>
+                        <td className="px-3 py-2 text-[#6b7a8d] max-w-[80px] truncate">{entry.region}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {!isInTopTen && (
+            <div className="border-t border-navy-border px-4 py-3">
+              <p className="font-ibm text-[10px] tracking-[0.15em] uppercase text-[#4a5568] mb-2">
+                Your Result
+              </p>
+              <div className="bg-navy-input border border-navy-border px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-ibm text-[11px] text-[#9aa3b0]">
+                <span className="font-semibold text-[#e8e0d0]">{state.playerName}</span>
+                <span className="tabular-nums">{state.score >= 0 ? '+' : ''}{state.score}</span>
+                <span className="tabular-nums">{percentage}%</span>
+                <span className="tabular-nums">{formatDuration(state.duration)}</span>
+                <span className="text-[#6b7a8d]">{state.region}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer rule */}

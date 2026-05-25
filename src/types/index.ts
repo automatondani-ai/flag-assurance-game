@@ -1,9 +1,12 @@
 export type GamePhase = 'welcome' | 'playing' | 'results';
 
+export type Continent = 'Africa' | 'Europe' | 'Americas' | 'Asia' | 'Oceania';
+
 export interface Country {
   name: string;
   flag: string;
   code: string;
+  continent: Continent;
 }
 
 export interface GameState {
@@ -15,4 +18,9 @@ export interface GameState {
   totalQuestions: number;
   lastDelta: number | null;
   lastCorrect: boolean | null;
+  lastResolvedName: string | null;
+  missedCountries: Country[];
+  duration: number;
+  region: string;
+  gameLength: number;
 }

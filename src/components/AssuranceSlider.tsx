@@ -1,14 +1,96 @@
+import { useRef, useEffect, useCallback } from 'react';
+
 interface AssuranceSliderProps {
   value: number;
   onChange: (v: number) => void;
 }
 
 export default function AssuranceSlider({ value, onChange }: AssuranceSliderProps) {
-  const fillPct = value; // 0–100
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const isTransitioning = useRef(false);
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const calculateValue = useCallback((clientX: number): number => {
+    if (!trackRef.current) return 0;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return Math.round(pct * 100);
+  }, []);
+
+  const startTransition = useCallback(() => {
+    isTransitioning.current = true;
+    if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    transitionTimer.current = setTimeout(() => {
+      isTransitioning.current = false;
+    }, 150);
+  }, []);
+
+  // Global mouse/touch move and up handlers attached on drag start
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      onChange(calculateValue(e.clientX));
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      startTransition();
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      onChange(calculateValue(e.touches[0].clientX));
+    };
+
+    const onTouchEnd = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      startTransition();
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [calculateValue, onChange, startTransition]);
+
+  const handleKnobMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    isTransitioning.current = false;
+  };
+
+  const handleKnobTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    isDragging.current = true;
+    isTransitioning.current = false;
+  };
+
+  const handleTrackClick = (e: React.MouseEvent) => {
+    // Ignore if the click originated from a drag release
+    if (isDragging.current) return;
+    onChange(calculateValue(e.clientX));
+    startTransition();
+  };
+
+  const knobTransition = isTransitioning.current
+    ? 'transition-all duration-150'
+    : '';
 
   return (
-    <div className="w-full">
-      <div className="flex items-baseline justify-between mb-2">
+    <div className="w-full select-none">
+      {/* Label + value */}
+      <div className="flex items-baseline justify-between mb-3">
         <span className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase">
           Assurance
         </span>
@@ -23,28 +105,35 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
         </span>
       </div>
 
-      {/* Track wrapper */}
-      <div className="relative h-2 bg-navy-input border border-navy-border">
+      {/* Track */}
+      <div
+        ref={trackRef}
+        onClick={handleTrackClick}
+        className="relative h-2 bg-navy-input border border-navy-border cursor-pointer"
+      >
         {/* Gold fill */}
         <div
-          className="absolute inset-y-0 left-0 bg-gold transition-all duration-75"
-          style={{ width: `${fillPct}%` }}
+          className="absolute inset-y-0 left-0 bg-gold pointer-events-none"
+          style={{ width: `${value}%` }}
         />
 
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={value}
-          onChange={e => onChange(Number(e.target.value))}
-          className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
-          style={{ margin: 0 }}
+        {/* Knob */}
+        <div
+          onMouseDown={handleKnobMouseDown}
+          onTouchStart={handleKnobTouchStart}
+          className={[
+            'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
+            'w-5 h-5 rounded-full bg-gold border-2 border-white shadow-lg',
+            'cursor-grab active:cursor-grabbing',
+            'hover:shadow-[0_0_0_4px_rgba(212,168,83,0.25)]',
+            knobTransition,
+          ].join(' ')}
+          style={{ left: `${value}%` }}
         />
       </div>
 
       {/* Tick marks */}
-      <div className="flex justify-between mt-1.5 px-0.5">
+      <div className="flex justify-between mt-2 px-0.5">
         {[0, 25, 50, 75, 100].map(tick => (
           <span
             key={tick}
