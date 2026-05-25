@@ -84,7 +84,7 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
       {/* Label + value */}
       <div className="flex items-baseline justify-between mb-3">
         <span className="font-fredoka text-base uppercase tracking-wide" style={{ color: 'rgba(255,248,240,0.7)' }}>
-          Assurance
+          Confidence Level
         </span>
         <span
           className="font-fredoka text-2xl tabular-nums transition-colors duration-150"
@@ -142,7 +142,7 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
       {/* Zero-confidence hint */}
       {value === 0 && (
         <p className="font-nunito text-xs mt-1 leading-snug" style={{ color: 'rgba(255,248,240,0.35)' }}>
-          0 = no confidence (no points risked)
+          0 = not confident (no points risked)
         </p>
       )}
     </div>

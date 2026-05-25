@@ -272,7 +272,7 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
             </div>
 
             <p className="font-nunito text-xs leading-relaxed" style={{ color: 'rgba(255,248,240,0.28)' }}>
-              Higher assurance = higher reward or penalty. Score can go negative.
+              Higher confidence = higher reward or penalty. Score can go negative.
             </p>
           </div>
         </div>
