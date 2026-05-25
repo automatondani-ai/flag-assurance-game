@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Continent } from '../types';
 import { COUNTRIES } from '../data/countries';
 import LeaderboardTable from './LeaderboardTable';
@@ -20,14 +20,37 @@ const REGION_OPTIONS: { id: Continent; label: string }[] = [
   { id: 'Oceania',  label: '🌊 Oceania'  },
 ];
 
-export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
-  const [name, setName] = useState('');
-  const [selectedContinents, setSelectedContinents] = useState<Set<Continent>>(
-    new Set(ALL_CONTINENTS),
+// ── Small checklist item used in the progress summary ──────────────────────────
+function CheckItem({ done, label }: { done: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="font-fredoka text-base leading-none w-4 text-center"
+        style={{ color: done ? '#4ADE80' : 'rgba(255,248,240,0.35)' }}
+      >
+        {done ? '✓' : '○'}
+      </span>
+      <span
+        className="font-nunito text-sm"
+        style={{ color: done ? '#4ADE80' : 'rgba(255,248,240,0.55)' }}
+      >
+        {label}
+      </span>
+    </div>
   );
-  const [gameLength, setGameLength] = useState<number>(25);
+}
 
-  const trimmed = name.trim();
+export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [name, setName]                         = useState('');
+  // Rule 1: empty on load
+  const [selectedContinents, setSelectedContinents] = useState<Set<Continent>>(new Set<Continent>());
+  const [gameLength, setGameLength]             = useState<number>(25);
+
+  // ── Derived values ──────────────────────────────────────────────────────────
+  const trimmed        = name.trim();
+  const nameComplete   = trimmed.length > 0;
+  const regionComplete = selectedContinents.size > 0;
   const isWorldSelected = selectedContinents.size === ALL_CONTINENTS.length;
 
   const pool = useMemo(
@@ -37,26 +60,58 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
   const isAllMode       = gameLength === ALL_SENTINEL;
   const effectiveLength = isAllMode ? pool.length : Math.min(gameLength, pool.length);
-  const showAllHint     = isAllMode;
+  const showAllHint     = isAllMode && pool.length > 0;
   const showCapNote     = !isAllMode && pool.length > 0 && pool.length < gameLength;
-  const canStart        = trimmed.length > 0 && pool.length > 0;
+  const allComplete     = nameComplete && regionComplete;
+  const canStart        = allComplete;
 
+  // ── Button bounce: fires once when canStart first transitions false → true ──
+  const [btnBounce, setBtnBounce] = useState(false);
+  const prevCanStart = useRef(false);
+  useEffect(() => {
+    if (canStart && !prevCanStart.current) {
+      setBtnBounce(true);
+      const t = setTimeout(() => setBtnBounce(false), 400);
+      return () => clearTimeout(t);
+    }
+    prevCanStart.current = canStart;
+  }, [canStart]);
+
+  // ── Leaderboard ─────────────────────────────────────────────────────────────
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   useEffect(() => { setLeaderboard(getLeaderboard()); }, []);
 
+  // ── Interaction handlers ────────────────────────────────────────────────────
+
+  /** Rule 2: individual toggle, no minimum-1 guard (can go to empty). */
   function toggleContinent(continent: Continent) {
     setSelectedContinents(prev => {
-      if (prev.has(continent)) {
-        if (prev.size === 1) return prev;
-        const next = new Set(prev);
+      const next = new Set(prev);
+      if (next.has(continent)) {
         next.delete(continent);
-        return next;
+      } else {
+        next.add(continent);
       }
-      return new Set([...prev, continent]);
+      return next;
     });
   }
 
-  function selectAll() { setSelectedContinents(new Set(ALL_CONTINENTS)); }
+  /**
+   * Rule 3 & 4 & 5: World is a bidirectional toggle.
+   * - If all 5 selected → deselect all (back to empty).
+   * - Otherwise (0–4 selected) → select all 5.
+   * Rule 4 (auto-deselect World when a region removed) is handled
+   * automatically by isWorldSelected recomputing from size.
+   * Rule 5 (auto-highlight World when all 5 individually selected) is also
+   * automatic — isWorldSelected becomes true once size === 5.
+   */
+  function toggleWorld() {
+    setSelectedContinents(prev =>
+      prev.size === ALL_CONTINENTS.length
+        ? new Set<Continent>()          // deselect all
+        : new Set(ALL_CONTINENTS),      // select all
+    );
+  }
 
   function handleSubmit() {
     if (canStart) onStart(trimmed, Array.from(selectedContinents), effectiveLength);
@@ -66,6 +121,15 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
     if (e.key === 'Enter') handleSubmit();
   }
 
+  /** Dynamic begin-button label based on field completion. */
+  function buttonLabel(): string {
+    if (allComplete) return 'BEGIN MISSION 🚀';
+    if (nameComplete && !regionComplete) return 'Pick a region to continue →';
+    if (!nameComplete && regionComplete) return 'Enter your name to continue →';
+    return 'Complete the fields above to begin';
+  }
+
+  // ── Chip style ─────────────────────────────────────────────────────────────
   function chipClass(active: boolean): string {
     return [
       'font-fredoka text-sm px-4 py-1.5 rounded-full border-2 transition-all duration-150 cursor-pointer select-none',
@@ -75,7 +139,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
     ].join(' ');
   }
 
-  /** Shorthand for positioning decorative emojis absolutely around the circle. */
+  // ── Deco helper ────────────────────────────────────────────────────────────
   const deco = (
     pos: { top?: string; left?: string; right?: string; bottom?: string },
     rot = '0deg',
@@ -98,14 +162,11 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-10 items-center">
 
           {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
-          <div className="space-y-6">
+          <div className="space-y-5">
 
-            {/* Title */}
+            {/* Title + subtitle */}
             <div>
-              <h1
-                className="font-fredoka leading-none"
-                style={{ fontSize: '4rem', color: 'var(--color-cream)' }}
-              >
+              <h1 className="font-fredoka leading-none" style={{ fontSize: '4rem', color: 'var(--color-cream)' }}>
                 FLAG<br />EXPLORER
               </h1>
               <p className="font-nunito text-lg mt-2" style={{ color: 'rgba(255,248,240,0.72)' }}>
@@ -113,54 +174,102 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               </p>
             </div>
 
-            {/* Name input */}
+            {/* ── Progress checklist — hidden once all complete ─────── */}
+            {!allComplete && (
+              <div
+                className="rounded-2xl px-4 py-3 space-y-1.5"
+                style={{ background: 'rgba(255,255,255,0.09)' }}
+              >
+                <CheckItem done={nameComplete}   label="Your explorer name" />
+                <CheckItem done={regionComplete} label="Region selection"   />
+                <CheckItem done={true}           label="Game length"        />
+              </div>
+            )}
+
+            {/* ── Field 1: Explorer Name ───────────────────────────── */}
             <div>
               <label
-                className="block font-fredoka text-sm uppercase tracking-wide mb-2"
-                style={{ color: 'var(--color-cream)' }}
+                className="block font-nunito text-sm mb-2"
+                style={{ color: nameComplete ? '#4ADE80' : '#F59E0B' }}
               >
-                Explorer Name
+                {nameComplete ? '① Explorer name ✓' : '① Enter your name'}
               </label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Your explorer name..."
-                maxLength={32}
-                className="pill-input"
-                style={{ fontFamily: "'Fredoka One', cursive", border: '3px solid var(--color-gold)' }}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Your explorer name..."
+                  maxLength={32}
+                  className="pill-input"
+                  style={{
+                    fontFamily: "'Fredoka One', cursive",
+                    border: `3px solid ${nameComplete ? '#4ADE80' : '#F59E0B'}`,
+                    paddingRight: nameComplete ? '3rem' : undefined,
+                  }}
+                />
+                {nameComplete && (
+                  <span
+                    className="absolute right-4 top-1/2 -translate-y-1/2 font-fredoka text-xl select-none pointer-events-none"
+                    style={{ color: '#4ADE80' }}
+                  >
+                    ✓
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Region selector */}
+            {/* ── Field 2: Region Selector ─────────────────────────── */}
             <div>
-              <label
-                className="block font-fredoka text-sm uppercase tracking-wide mb-2"
-                style={{ color: 'var(--color-cream)' }}
-              >
-                Explore By Region
-              </label>
+              {/* Label with status dot */}
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${!regionComplete ? 'animate-pulse' : ''}`}
+                  style={{ background: regionComplete ? '#4ADE80' : '#F59E0B' }}
+                />
+                <span className="font-fredoka text-sm uppercase tracking-wide" style={{ color: 'var(--color-cream)' }}>
+                  Explore By Region
+                </span>
+              </div>
+
+              {/* Region chips */}
               <div className="flex flex-wrap gap-2">
                 {REGION_OPTIONS.map(({ id, label }) => (
                   <button key={id} onClick={() => toggleContinent(id)} className={chipClass(selectedContinents.has(id))}>
                     {label}
                   </button>
                 ))}
-                <button onClick={selectAll} className={chipClass(isWorldSelected)}>
+                <button onClick={toggleWorld} className={chipClass(isWorldSelected)}>
                   🌐 World
                 </button>
               </div>
+
+              {/* Validation helper */}
+              <div className="mt-2 min-h-[1.25rem]">
+                {regionComplete ? (
+                  <p className="font-nunito text-sm" style={{ color: '#4ADE80' }}>
+                    ② Region selected ✓
+                  </p>
+                ) : (
+                  <p className="font-nunito text-sm italic" style={{ color: '#F59E0B' }}>
+                    ② Pick at least one region
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* Game length */}
+            {/* ── Field 3: Game Length ─────────────────────────────── */}
             <div>
-              <label
-                className="block font-fredoka text-sm uppercase tracking-wide mb-2"
-                style={{ color: 'var(--color-cream)' }}
-              >
-                Game Length
-              </label>
+              {/* Label with green dot (always satisfied) */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#4ADE80' }} />
+                <span className="font-fredoka text-sm uppercase tracking-wide" style={{ color: 'var(--color-cream)' }}>
+                  Game Length
+                </span>
+              </div>
+
+              {/* Length chips */}
               <div className="flex flex-wrap gap-2">
                 {GAME_LENGTHS.map(n => (
                   <button key={n} onClick={() => setGameLength(n)} className={chipClass(gameLength === n)}>
@@ -168,7 +277,12 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
                   </button>
                 ))}
               </div>
-              <div className="mt-2 min-h-[1.25rem]">
+
+              {/* Validation + flag count hints */}
+              <div className="mt-2 space-y-0.5">
+                <p className="font-nunito text-sm" style={{ color: '#4ADE80' }}>
+                  ③ Game length set ✓
+                </p>
                 {showAllHint && (
                   <p className="font-nunito text-xs" style={{ color: 'rgba(255,248,240,0.5)' }}>
                     {pool.length} flags available for your selection
@@ -182,13 +296,22 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               </div>
             </div>
 
-            {/* Begin button */}
+            {/* ── Begin button ─────────────────────────────────────── */}
             <button
               onClick={handleSubmit}
               disabled={!canStart}
-              className="btn-gold w-full py-4 px-10 text-xl uppercase tracking-wide"
+              className={[
+                'w-full py-4 px-10 text-xl tracking-wide font-fredoka rounded-full border-none transition-all duration-200',
+                canStart ? 'cursor-pointer' : 'cursor-not-allowed',
+                canStart && btnBounce ? 'animate-btn-bounce' : '',
+              ].join(' ')}
+              style={{
+                background: canStart ? 'var(--color-gold)' : 'rgba(148,163,184,0.35)',
+                color: canStart ? 'var(--color-navy-text)' : 'rgba(255,255,255,0.4)',
+                opacity: canStart ? 1 : 0.7,
+              }}
             >
-              Begin Mission
+              {buttonLabel()}
               {canStart && (
                 <span className="ml-2 font-nunito text-base normal-case font-normal opacity-70">
                   · {effectiveLength} rounds
@@ -196,14 +319,16 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               )}
             </button>
 
-            <p className="font-nunito text-xs text-center" style={{ color: 'rgba(255,248,240,0.35)' }}>
-              {pool.length} flags in the selected pool
-            </p>
+            {/* Flag count — hidden when no regions selected */}
+            {pool.length > 0 && (
+              <p className="font-nunito text-xs text-center" style={{ color: 'rgba(255,248,240,0.35)' }}>
+                {pool.length} flags in the selected pool
+              </p>
+            )}
           </div>
 
           {/* ── RIGHT COLUMN — circle stage ─────────────────────────── */}
           <div className="flex justify-center">
-            {/* Wrapper for decorative emojis */}
             <div className="relative w-full" style={{ maxWidth: '500px' }}>
 
               {/* Decorative emojis */}
@@ -215,17 +340,11 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               <span style={deco({ bottom: '-20px', left: '-12px' }, '-10deg', '2.5rem')}>✈️</span>
 
               {/* Circle */}
-              <div
-                className="circle-stage w-full"
-                style={{ padding: '2.5rem 2rem', gap: '0.5rem' }}
-              >
+              <div className="circle-stage w-full" style={{ padding: '2.5rem 2rem', gap: '0.5rem' }}>
                 <div className="text-[5rem] select-none leading-none mb-1">🌍</div>
-
                 <p className="font-fredoka text-xl mb-1" style={{ color: 'var(--color-navy-text)' }}>
                   GLOBAL TOP 10
                 </p>
-
-                {/* Constrain table to centre column of circle so rows stay inside */}
                 <div className="w-full" style={{ maxWidth: '380px', maxHeight: '240px', overflowY: 'auto' }}>
                   <LeaderboardTable entries={leaderboard} />
                 </div>
