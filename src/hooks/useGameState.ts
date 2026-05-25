@@ -14,8 +14,38 @@ type Action =
   | { type: 'START'; playerName: string; queue: Country[]; region: string; gameLength: number }
   | { type: 'RECORD_ANSWER'; delta: number; correct: boolean; resolvedName: string }
   | { type: 'ADVANCE_ROUND' }
+  | { type: 'USE_HINT' }
   | { type: 'END'; duration: number }
   | { type: 'RESET' };
+
+// ─── Hint Display Builder ─────────────────────────────────────────────────────
+
+/**
+ * Builds the progressive hint reveal string for a country name.
+ *
+ * Rules:
+ * - Each letter (a-z, A-Z, accented Latin) has a sequential "letter index"
+ *   that ignores spaces, hyphens, apostrophes, and other non-letter chars.
+ * - A letter at letter-index i is revealed if i < hintsUsed, otherwise "_".
+ * - Non-letter characters (spaces, hyphens, apostrophes) are always shown as-is.
+ * - Every character in the result is separated by a single space for readability,
+ *   so "Nigeria" (hintsUsed=2) → "N i _ _ _ _ _"
+ */
+function buildHintDisplay(name: string, hintsUsed: number): string {
+  // Matches Basic Latin letters + Latin Extended (covers accented chars like ô, é, ñ)
+  const LETTER_RE = /[a-zA-ZÀ-ɏ]/;
+  let letterIndex = 0;
+  const chars = name.split('').map(char => {
+    if (LETTER_RE.test(char)) {
+      const revealed = letterIndex < hintsUsed;
+      letterIndex++;
+      return revealed ? char : '_';
+    }
+    // Non-letter (space, hyphen, apostrophe, etc.) — always show as-is
+    return char;
+  });
+  return chars.join(' ');
+}
 
 // ─── Initial State ────────────────────────────────────────────────────────────
 
@@ -34,6 +64,10 @@ const INITIAL: ReducerState = {
   region: '',
   gameLength: 0,
   queue: [],
+  // Hint system — reset to full budget on resetGame (RESET → INITIAL)
+  hintsUsed: 0,
+  hintDisplay: '',
+  totalHintsRemaining: 7,
 };
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -56,6 +90,10 @@ function reducer(state: ReducerState, action: Action): ReducerState {
         duration: 0,
         region: action.region,
         gameLength: action.gameLength,
+        // Hint system — fresh budget for every new game
+        hintsUsed: 0,
+        hintDisplay: '',
+        totalHintsRemaining: 7,
       };
 
     case 'RECORD_ANSWER': {
@@ -74,15 +112,41 @@ function reducer(state: ReducerState, action: Action): ReducerState {
     }
 
     case 'ADVANCE_ROUND':
-      // Atomically advances the index AND clears feedback in one render,
-      // so the new flag never appears with stale lastCorrect/lastDelta.
+      // Atomically advances the index AND clears feedback + hint round state in
+      // one render, so the new flag never appears with stale values.
+      // NOTE: totalHintsRemaining is intentionally NOT touched here — the global
+      // budget persists across all rounds and only resets on START / RESET.
       return {
         ...state,
         currentIndex: state.currentIndex + 1,
         lastDelta: null,
         lastCorrect: null,
         lastResolvedName: null,
+        hintsUsed: 0,      // reset per-round hint counter
+        hintDisplay: '',   // clear the reveal string for the new flag
       };
+
+    case 'USE_HINT': {
+      // Guard 1: no budget remaining — silently ignore
+      if (state.totalHintsRemaining === 0) return state;
+
+      const country = state.queue[state.currentIndex];
+      if (!country) return state;
+
+      // Guard 2: all letters already revealed for this round — silently ignore
+      const LETTER_RE = /[a-zA-ZÀ-ɏ]/;
+      const letterCount = country.name.split('').filter(c => LETTER_RE.test(c)).length;
+      if (state.hintsUsed >= letterCount) return state;
+
+      const newHintsUsed = state.hintsUsed + 1;
+
+      return {
+        ...state,
+        hintsUsed: newHintsUsed,
+        totalHintsRemaining: state.totalHintsRemaining - 1, // global budget: never resets mid-game
+        hintDisplay: buildHintDisplay(country.name, newHintsUsed),
+      };
+    }
 
     case 'END':
       return { ...state, phase: 'results', duration: action.duration };
@@ -99,6 +163,7 @@ export interface UseGameStateReturn {
   queue: Country[];
   startGame: (playerName: string, continents: Continent[], length: number) => void;
   submitAnswer: (input: string, assurance: number) => void;
+  useHint: () => void;
   resetGame: () => void;
 }
 
@@ -175,6 +240,10 @@ export default function useGameState(): UseGameStateReturn {
     }, 1500);
   }, []);
 
+  const useHint = useCallback(() => {
+    dispatch({ type: 'USE_HINT' });
+  }, []);
+
   const resetGame = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -184,5 +253,5 @@ export default function useGameState(): UseGameStateReturn {
   }, []);
 
   const { queue, ...gameState } = reducerState;
-  return { state: gameState, queue, startGame, submitAnswer, resetGame };
+  return { state: gameState, queue, startGame, submitAnswer, useHint, resetGame };
 }

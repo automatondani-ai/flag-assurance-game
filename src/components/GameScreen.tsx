@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import type { GameState, Country } from '../types';
 import AssuranceSlider from './AssuranceSlider';
+import HintHearts from './HintHearts';
+import HintDisplay from './HintDisplay';
 
 interface GameScreenProps {
   state: GameState;
   currentCountry: Country;
   onSubmit: (input: string, assurance: number) => void;
+  onHint: () => void;
 }
 
-export default function GameScreen({ state, currentCountry, onSubmit }: GameScreenProps) {
+export default function GameScreen({ state, currentCountry, onSubmit, onHint }: GameScreenProps) {
   const [input, setInput] = useState('');
   const [assurance, setAssurance] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +118,12 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
               />
             </div>
 
+            {/* Progressive hint display — appears below the flag once ≥1 hint used */}
+            <HintDisplay
+              hintDisplay={state.hintDisplay}
+              hintsUsed={state.hintsUsed}
+            />
+
             {/* Feedback area — always in DOM to prevent layout shift.
                 Content is guarded by isFeedbackVisible (lastCorrect !== null) so
                 the ternary inside never evaluates with null, eliminating the
@@ -160,6 +169,28 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
                   )}
                 </>
               )}
+            </div>
+
+            {/* ── Hint row: hearts (budget) + hint button ─────────────────── */}
+            <div className="flex items-end justify-between mb-4">
+              <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
+
+              {/* HINT button
+                  - Disabled only when totalHintsRemaining === 0 (opacity + no hover)
+                  - The reducer silently ignores extra presses when all letters for
+                    the current round are already revealed, so no need to disable here */}
+              <button
+                onClick={onHint}
+                disabled={state.totalHintsRemaining === 0}
+                className={[
+                  'font-ibm text-sm px-4 py-2 border transition-colors duration-150',
+                  state.totalHintsRemaining > 0
+                    ? 'border-gold text-gold bg-transparent hover:bg-gold hover:text-navy cursor-pointer'
+                    : 'border-gold/30 text-gold/30 bg-transparent opacity-40 cursor-not-allowed',
+                ].join(' ')}
+              >
+                {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints Left'}
+              </button>
             </div>
 
             {/* Answer input */}

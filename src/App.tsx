@@ -4,7 +4,7 @@ import GameScreen from './components/GameScreen';
 import ResultsScreen from './components/ResultsScreen';
 
 export default function App() {
-  const { state, queue, startGame, submitAnswer, resetGame } = useGameState();
+  const { state, queue, startGame, submitAnswer, useHint, resetGame } = useGameState();
 
   if (state.phase === 'welcome') {
     return <WelcomeScreen onStart={startGame} />;
@@ -18,6 +18,7 @@ export default function App() {
         state={state}
         currentCountry={currentCountry}
         onSubmit={submitAnswer}
+        onHint={useHint}
       />
     );
   }

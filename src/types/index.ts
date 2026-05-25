@@ -24,4 +24,15 @@ export interface GameState {
   duration: number;
   region: string;
   gameLength: number;
+
+  // ── Hint system ───────────────────────────────────────────────────────────
+  /** How many hints have been used on the CURRENT round only. Resets to 0 each round. */
+  hintsUsed: number;
+  /** Progressive reveal string for the current round, e.g. "N i _ _ _ _ _". Cleared each round. */
+  hintDisplay: string;
+  /**
+   * Global hint budget for the entire game. Starts at 7, decrements on each USE_HINT,
+   * and NEVER resets mid-game — only on startGame / resetGame.
+   */
+  totalHintsRemaining: number;
 }
