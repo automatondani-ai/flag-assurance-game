@@ -81,7 +81,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   }
 
   return (
-    <div className="min-h-screen bg-navy flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-navy px-4 py-8">
       {/* Subtle grid overlay */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.03]"
@@ -92,7 +92,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         }}
       />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-5xl mx-auto">
         {/* Top rule */}
         <div className="flex items-center gap-3 mb-8">
           <div className="h-px flex-1 bg-gold opacity-40" />
@@ -102,137 +102,144 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           <div className="h-px flex-1 bg-gold opacity-40" />
         </div>
 
-        {/* Title */}
-        <h1 className="font-playfair text-6xl font-bold text-gold tracking-tight leading-none text-center mb-3">
-          FLAG
-          <br />
-          ASSURANCE
-        </h1>
+        {/* ── Two-column layout ──────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-8 items-start">
 
-        {/* Subtitle */}
-        <p className="font-ibm text-[#9aa3b0] text-sm tracking-[0.15em] text-center mb-10 uppercase">
-          Test your flags. Wager your confidence.
-        </p>
-
-        <div className="h-px bg-navy-border mb-8" />
-
-        {/* Card */}
-        <div className="bg-navy-card border border-navy-border p-8 space-y-6">
-
-          {/* ── Name input ──────────────────────────────────────────────── */}
+          {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
           <div>
-            <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-2">
-              Commander Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter your name"
-              maxLength={32}
-              className="w-full bg-navy-input border border-navy-border text-[#e8e0d0] font-ibm text-sm px-4 py-3 outline-none placeholder-[#2e3a4a] tracking-wide focus:border-gold transition-colors duration-200"
-            />
-          </div>
+            {/* Title */}
+            <h1 className="font-playfair text-6xl font-bold text-gold tracking-tight leading-none text-center mb-3">
+              FLAG
+              <br />
+              ASSURANCE
+            </h1>
 
-          <div className="h-px bg-navy-border" />
+            {/* Subtitle */}
+            <p className="font-ibm text-[#9aa3b0] text-sm tracking-[0.15em] text-center mb-10 uppercase">
+              Test your flags. Wager your confidence.
+            </p>
 
-          {/* ── Region Selector ─────────────────────────────────────────── */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase">
-                Choose Your Region
-              </label>
-              <span className="font-ibm text-[10px] text-[#4a5568] tabular-nums">
-                {pool.length} flags available
-              </span>
-            </div>
+            <div className="h-px bg-navy-border mb-8" />
 
-            <div className="flex flex-wrap gap-2">
-              {REGION_OPTIONS.map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => toggleContinent(id)}
-                  className={chipClass(selectedContinents.has(id))}
-                >
-                  {label}
-                </button>
-              ))}
-              <button onClick={selectAll} className={chipClass(isWorldSelected)}>
-                🌐 World
+            {/* Card */}
+            <div className="bg-navy-card border border-navy-border p-8 space-y-6">
+
+              {/* ── Name input ────────────────────────────────────────────── */}
+              <div>
+                <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-2">
+                  Commander Name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Enter your name"
+                  maxLength={32}
+                  className="w-full bg-navy-input border border-navy-border text-[#e8e0d0] font-ibm text-sm px-4 py-3 outline-none placeholder-[#2e3a4a] tracking-wide focus:border-gold transition-colors duration-200"
+                />
+              </div>
+
+              <div className="h-px bg-navy-border" />
+
+              {/* ── Region Selector ───────────────────────────────────────── */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase">
+                    Choose Your Region
+                  </label>
+                  <span className="font-ibm text-[10px] text-[#4a5568] tabular-nums">
+                    {pool.length} flags available
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {REGION_OPTIONS.map(({ id, label }) => (
+                    <button
+                      key={id}
+                      onClick={() => toggleContinent(id)}
+                      className={chipClass(selectedContinents.has(id))}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <button onClick={selectAll} className={chipClass(isWorldSelected)}>
+                    🌐 World
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-px bg-navy-border" />
+
+              {/* ── Game Length ───────────────────────────────────────────── */}
+              <div>
+                <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-3">
+                  Game Length
+                </label>
+
+                <div className="grid grid-cols-5 gap-2">
+                  {GAME_LENGTHS.map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setGameLength(n)}
+                      className={chipClass(gameLength === n)}
+                    >
+                      <span className="block text-center tabular-nums">
+                        {n === ALL_SENTINEL ? 'ALL' : n}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Hint area — always reserves space to prevent layout jump */}
+                <div className="mt-2 min-h-[1.25rem]">
+                  {showAllHint && (
+                    <p className="font-ibm text-[11px] text-[#6b7a8d] leading-snug">
+                      {pool.length} flags available for your selection
+                    </p>
+                  )}
+                  {showCapNote && (
+                    <p className="font-ibm text-[11px] text-gold opacity-70 leading-snug">
+                      Only {pool.length} flags available — game will use all of them
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="h-px bg-navy-border" />
+
+              {/* ── Start button ──────────────────────────────────────────── */}
+              <button
+                onClick={handleSubmit}
+                disabled={!canStart}
+                className={[
+                  'w-full font-ibm text-sm tracking-[0.25em] uppercase py-3 px-6 transition-all duration-200',
+                  canStart
+                    ? 'bg-gold text-navy font-semibold hover:bg-[#e0b862] cursor-pointer'
+                    : 'bg-navy-border text-[#3a4557] cursor-not-allowed',
+                ].join(' ')}
+              >
+                Begin Mission
+                {canStart && (
+                  <span className="ml-2 font-normal opacity-70 tracking-normal normal-case">
+                    · {effectiveLength} rounds
+                  </span>
+                )}
               </button>
             </div>
           </div>
 
-          <div className="h-px bg-navy-border" />
-
-          {/* ── Game Length ─────────────────────────────────────────────── */}
-          <div>
-            <label className="block font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-3">
-              Game Length
-            </label>
-
-            <div className="grid grid-cols-5 gap-2">
-              {GAME_LENGTHS.map(n => (
-                <button
-                  key={n}
-                  onClick={() => setGameLength(n)}
-                  className={chipClass(gameLength === n)}
-                >
-                  <span className="block text-center tabular-nums">
-                    {n === ALL_SENTINEL ? 'ALL' : n}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Hint area — always reserves space to prevent layout jump */}
-            <div className="mt-2 min-h-[1.25rem]">
-              {showAllHint && (
-                <p className="font-ibm text-[11px] text-[#6b7a8d] leading-snug">
-                  {pool.length} flags available for your selection
-                </p>
-              )}
-              {showCapNote && (
-                <p className="font-ibm text-[11px] text-gold opacity-70 leading-snug">
-                  Only {pool.length} flags available — game will use all of them
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="h-px bg-navy-border" />
-
-          {/* ── Leaderboard ─────────────────────────────────────────────── */}
-          <div>
-            <p className="font-ibm text-xs tracking-[0.2em] text-[#6b7a8d] uppercase mb-3">
-              🏆 Global Top 10
-            </p>
-            <div className="border border-navy-border">
+          {/* ── RIGHT COLUMN — sticky leaderboard sidebar ─────────────────── */}
+          <div className="md:sticky md:top-6 self-start">
+            <div className="bg-navy-card border border-navy-border">
+              <div className="px-4 py-3 border-b border-navy-border flex items-center gap-2">
+                <span className="font-ibm text-xs tracking-[0.2em] uppercase text-[#6b7a8d]">
+                  🏆 Global Top 10
+                </span>
+              </div>
               <LeaderboardTable entries={leaderboard} />
             </div>
           </div>
-
-          <div className="h-px bg-navy-border" />
-
-          {/* ── Start button ─────────────────────────────────────────────── */}
-          <button
-            onClick={handleSubmit}
-            disabled={!canStart}
-            className={[
-              'w-full font-ibm text-sm tracking-[0.25em] uppercase py-3 px-6 transition-all duration-200',
-              canStart
-                ? 'bg-gold text-navy font-semibold hover:bg-[#e0b862] cursor-pointer'
-                : 'bg-navy-border text-[#3a4557] cursor-not-allowed',
-            ].join(' ')}
-          >
-            Begin Mission
-            {canStart && (
-              <span className="ml-2 font-normal opacity-70 tracking-normal normal-case">
-                · {effectiveLength} rounds
-              </span>
-            )}
-          </button>
         </div>
 
         {/* Bottom rule */}
