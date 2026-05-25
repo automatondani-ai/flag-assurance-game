@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# Flag Assurance Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A cartographic-themed flag-identification quiz where you wager your confidence on every answer. The higher your assurance, the more you gain — or lose.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Each round shows a country's flag. You type your answer and set an **assurance level** (0–100) representing how confident you are. Score delta is `±assurance`: a correct answer at 84% assurance earns +84; a wrong answer costs −84. Scores can go negative. At the end of 68 rounds, you receive a performance tier and a final debrief.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Layer | Technology |
+|---|---|
+| UI framework | [React 19](https://react.dev) |
+| Build tool | [Vite](https://vite.dev) |
+| Language | TypeScript |
+| Styling | [Tailwind CSS v3](https://tailwindcss.com) |
+| Fonts | Playfair Display + IBM Plex Mono (Google Fonts) |
+| Flag images | [flagcdn.com](https://flagcdn.com) (REST Countries format) |
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/
+│   ├── WelcomeScreen.tsx   # Name entry, game intro
+│   ├── GameScreen.tsx      # Flag display, answer input, assurance slider
+│   ├── AssuranceSlider.tsx # 0–100 confidence wager control
+│   └── ResultsScreen.tsx   # Debrief, animated score count-up
+├── hooks/
+│   └── useGameState.ts     # useReducer-based game lifecycle
+├── data/
+│   └── countries.ts        # 68 countries with flagcdn.com URLs
+├── types/
+│   └── index.ts            # GameState, Country, GamePhase types
+└── utils/
+    └── gameUtils.ts        # Fisher-Yates shuffle, score logic, tiers
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Running Locally
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+## Deployment
+
+This project deploys to **Vercel** with zero configuration. Push to your GitHub repository, import it in the [Vercel dashboard](https://vercel.com), and it redeploys automatically on every push to `main`.
+
+```bash
+# Production build (output in dist/)
+npm run build
+
+# Preview the production build locally
+npm run preview
+```
+
+## Game Rules
+
+- Type the country name shown by the flag
+- Set your assurance level (0–100) — this is your wager for that round
+- **Correct**: score += assurance
+- **Wrong**: score -= assurance
+- Score can go negative
+- 68 countries per game, shuffled randomly each run
+
+## Performance Tiers
+
+| Accuracy | Message |
+|---|---|
+| 0–38% | Better luck next time |
+| 39–55% | Good! |
+| 56–80% | Nice! You're a natural explorer. |
+| 81–100% | You're giving Google a run for their money. Great! |

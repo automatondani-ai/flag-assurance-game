@@ -10,6 +10,7 @@ export interface GameState {
   phase: GamePhase;
   playerName: string;
   score: number;
+  correctCount: number;
   currentIndex: number;
   totalQuestions: number;
   lastDelta: number | null;

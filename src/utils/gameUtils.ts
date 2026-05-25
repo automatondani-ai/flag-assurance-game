@@ -1,0 +1,47 @@
+export function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+export function normalizeInput(input: string): string {
+  return input.trim().toLowerCase();
+}
+
+export function checkAnswer(input: string, correct: string): boolean {
+  return normalizeInput(input) === normalizeInput(correct);
+}
+
+/**
+ * Returns the score delta for a question.
+ * Assurance is a multiplier the player wagers (e.g. 1–5).
+ * Correct answers earn +assurance; wrong answers lose -assurance.
+ */
+export function calculateScoreDelta(correct: boolean, assurance: number): number {
+  return correct ? assurance : -assurance;
+}
+
+export interface PerformanceTier {
+  message: string;
+  percentage: number;
+}
+
+export function getPerformanceTier(score: number, total: number): PerformanceTier {
+  const percentage = total === 0 ? 0 : Math.round((score / total) * 100);
+
+  let message: string;
+  if (percentage <= 38) {
+    message = 'Better luck next time';
+  } else if (percentage <= 55) {
+    message = 'Good!';
+  } else if (percentage <= 80) {
+    message = "Nice! You're a natural explorer.";
+  } else {
+    message = "You're giving Google a run for their money. Great!";
+  }
+
+  return { message, percentage };
+}
