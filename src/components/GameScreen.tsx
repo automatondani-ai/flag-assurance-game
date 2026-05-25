@@ -115,7 +115,10 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
               />
             </div>
 
-            {/* Feedback area — always in DOM to prevent layout shift */}
+            {/* Feedback area — always in DOM to prevent layout shift.
+                Content is guarded by isFeedbackVisible (lastCorrect !== null) so
+                the ternary inside never evaluates with null, eliminating the
+                "Wrong — it was [new country]" flash during the CSS fade-out. */}
             <div
               className={[
                 'mb-5 px-4 py-3 border transition-all duration-300 min-h-[3.5rem] flex items-center justify-between',
@@ -126,32 +129,36 @@ export default function GameScreen({ state, currentCountry, onSubmit }: GameScre
                   : 'border-transparent opacity-0',
               ].join(' ')}
             >
-              <span
-                className={[
-                  'font-ibm text-sm tracking-wide',
-                  state.lastCorrect ? 'text-emerald-400' : 'text-red-400',
-                ].join(' ')}
-              >
-                {state.lastCorrect
-                  ? state.lastResolvedName !== null &&
-                    state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
-                    ? `Correct! (matched: ${state.lastResolvedName})`
-                    : 'Correct, Good Job.'
-                  : `Wrong — it was ${currentCountry.name}`}
-              </span>
+              {isFeedbackVisible && (
+                <>
+                  <span
+                    className={[
+                      'font-ibm text-sm tracking-wide',
+                      state.lastCorrect ? 'text-emerald-400' : 'text-red-400',
+                    ].join(' ')}
+                  >
+                    {state.lastCorrect
+                      ? state.lastResolvedName !== null &&
+                        state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
+                        ? `Correct! (matched: ${state.lastResolvedName})`
+                        : 'Correct, Good Job.'
+                      : `Wrong — it was ${currentCountry.name}`}
+                  </span>
 
-              {/* Delta — keyed by currentIndex so it remounts (and re-animates) each round */}
-              {state.lastDelta !== null && (
-                <span
-                  key={`delta-${state.currentIndex}`}
-                  className={[
-                    'font-ibm text-lg font-semibold tabular-nums animate-delta-pop',
-                    state.lastDelta >= 0 ? 'text-emerald-400' : 'text-red-400',
-                  ].join(' ')}
-                >
-                  {state.lastDelta >= 0 ? '+' : ''}
-                  {state.lastDelta}
-                </span>
+                  {/* Delta — keyed by currentIndex so it remounts (and re-animates) each round */}
+                  {state.lastDelta !== null && (
+                    <span
+                      key={`delta-${state.currentIndex}`}
+                      className={[
+                        'font-ibm text-lg font-semibold tabular-nums animate-delta-pop',
+                        state.lastDelta >= 0 ? 'text-emerald-400' : 'text-red-400',
+                      ].join(' ')}
+                    >
+                      {state.lastDelta >= 0 ? '+' : ''}
+                      {state.lastDelta}
+                    </span>
+                  )}
+                </>
               )}
             </div>
 

@@ -13,7 +13,7 @@ type ReducerState = GameState & { queue: Country[] };
 type Action =
   | { type: 'START'; playerName: string; queue: Country[]; region: string; gameLength: number }
   | { type: 'RECORD_ANSWER'; delta: number; correct: boolean; resolvedName: string }
-  | { type: 'ADVANCE' }
+  | { type: 'ADVANCE_ROUND' }
   | { type: 'END'; duration: number }
   | { type: 'RESET' };
 
@@ -73,7 +73,9 @@ function reducer(state: ReducerState, action: Action): ReducerState {
       };
     }
 
-    case 'ADVANCE':
+    case 'ADVANCE_ROUND':
+      // Atomically advances the index AND clears feedback in one render,
+      // so the new flag never appears with stale lastCorrect/lastDelta.
       return {
         ...state,
         currentIndex: state.currentIndex + 1,
@@ -168,7 +170,7 @@ export default function useGameState(): UseGameStateReturn {
         });
         dispatch({ type: 'END', duration });
       } else {
-        dispatch({ type: 'ADVANCE' });
+        dispatch({ type: 'ADVANCE_ROUND' });
       }
     }, 1500);
   }, []);
