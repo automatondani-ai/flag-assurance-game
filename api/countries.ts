@@ -207,3 +207,30 @@ export const COUNTRIES: ServerCountry[] = [
 export const COUNTRY_MAP = new Map<string, ServerCountry>(
   COUNTRIES.map(c => [c.code, c]),
 );
+
+// ── Unicode-aware normalisation ───────────────────────────────────────────────
+/** NFC + lower-case. Mirrors the same helper in leaderboard.ts. */
+export function normaliseString(s: string): string {
+  return s.normalize('NFC').toLowerCase();
+}
+
+/** Pre-normalised country data for efficient server-side answer checking. */
+export type NormalisedCountry = {
+  code: string;
+  name: string;          // original name (for display / storage)
+  normName: string;      // NFC-lowercased for comparison
+  normAliases: string[]; // NFC-lowercased aliases for comparison
+};
+
+/**
+ * Same countries as COUNTRY_MAP but with names/aliases pre-normalised at
+ * module load so serverCheckAnswer() never normalises them per-request.
+ */
+export const NORMALISED_COUNTRY_MAP = new Map<string, NormalisedCountry>(
+  COUNTRIES.map(c => [c.code, {
+    code:         c.code,
+    name:         c.name,
+    normName:     normaliseString(c.name),
+    normAliases:  (c.aliases ?? []).map(normaliseString),
+  }]),
+);

@@ -12,13 +12,20 @@
  *   score is never trusted — only the server-verified value is stored.
  */
 import { Redis } from '@upstash/redis';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { COUNTRY_MAP } from './countries.js';
+import { NORMALISED_COUNTRY_MAP } from './countries.js';
+
+// ── Environment validation (cold-start guard) ─────────────────────────────────
+if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+  throw new Error(
+    'Missing required environment variables: KV_REST_API_URL, KV_REST_API_TOKEN',
+  );
+}
 
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
 });
 
 // ── CORS origin whitelist ──────────────────────────────────────────────────────
@@ -28,6 +35,9 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 
+// ── Redis key ─────────────────────────────────────────────────────────────────
+const LEADERBOARD_KEY = 'flag:leaderboard';
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Strip HTML tags and dangerous characters from user-supplied strings. */
@@ -36,6 +46,11 @@ function sanitise(s: string): string {
     .replace(/<[^>]*>/g, '')
     .replace(/[<>"'`]/g, '')
     .trim();
+}
+
+/** Unicode-aware normalisation: NFC + lower-case. Applied to player input before comparisons. */
+function normaliseString(s: string): string {
+  return s.normalize('NFC').toLowerCase();
 }
 
 /** Attach security headers to every response. */
@@ -65,32 +80,92 @@ function levenshtein(a: string, b: string): number {
 }
 
 /**
- * Server-side answer check:
- * 1. Exact match against correct name
- * 2. Exact match against any alias
- * 3. Levenshtein ≤ 2 against correct name (covers common 1-2 char typos)
+ * Adaptive Levenshtein threshold:
+ * Short names (≤7 chars) use a tighter tolerance of 1 edit.
+ * Longer names allow 2 edits to cover common multi-character typos.
+ */
+function getLevenshteinThreshold(nameLength: number): number {
+  return nameLength <= 7 ? 1 : 2;
+}
+
+/**
+ * Server-side answer check.
+ * Expects pre-normalised (NFC + lowercase) `normName` and `normAliases`
+ * from NORMALISED_COUNTRY_MAP. Only the player's raw `input` is normalised here.
  *
- * No Fuse.js on the server — pure string operations, no external deps.
+ * 1. Exact match against normalised correct name
+ * 2. Exact match against any normalised alias
+ * 3. Levenshtein ≤ adaptive threshold against correct name
+ *
  * Input length is capped at 45 chars (same limit enforced by the client input).
  */
 function serverCheckAnswer(
   input: string,
-  correctName: string,
-  aliases: string[] = [],
+  normName: string,
+  normAliases: string[],
 ): boolean {
   const trimmed = input.trim();
-  // Mirror the client-side 45-char guard
   if (trimmed.length > 45) return false;
   if (trimmed.length === 0) return false;
 
-  const normalised = trimmed.toLowerCase();
-  const target     = correctName.toLowerCase();
+  const normalised = normaliseString(trimmed);
 
-  if (normalised === target) return true;
-  if (aliases.some(a => a.toLowerCase() === normalised)) return true;
-  if (levenshtein(normalised, target) <= 2) return true;
+  if (normalised === normName) return true;
+  if (normAliases.some(a => a === normalised)) return true;
+  if (levenshtein(normalised, normName) <= getLevenshteinThreshold(normName.length)) return true;
 
   return false;
+}
+
+/**
+ * Timing validation: reject submissions that are impossibly fast.
+ * Bots and script-kiddies tend to POST instantly; humans need real time per question.
+ */
+const MIN_SECONDS_PER_ANSWER = 2;
+const MIN_TOTAL_SECONDS      = 10;
+
+function validateTiming(duration: number, gameLength: number): boolean {
+  if (duration < MIN_TOTAL_SECONDS) return false;
+  if (gameLength > 0 && duration < gameLength * MIN_SECONDS_PER_ANSWER) return false;
+  return true;
+}
+
+/** SHA-256 fingerprint of a submission for replay-attack detection. */
+function createSubmissionHash(body: Record<string, unknown>): string {
+  const payload = JSON.stringify({
+    name:       body.name,
+    answers:    body.answers,
+    gameLength: body.gameLength,
+    duration:   body.duration,
+    region:     body.region,
+  });
+  return createHash('sha256').update(payload).digest('hex');
+}
+
+// ── Name validation ───────────────────────────────────────────────────────────
+
+const RESERVED_NAMES = new Set([
+  'admin', 'administrator', 'moderator', 'mod', 'system',
+  'null', 'undefined', 'anonymous', 'bot', 'server',
+]);
+
+const PROFANITY_LIST = [
+  'fuck', 'shit', 'bitch', 'cunt', 'nigger', 'nigga', 'faggot',
+];
+
+function validateName(name: string): { valid: boolean; reason?: string } {
+  const lower = name.toLowerCase();
+  if (RESERVED_NAMES.has(lower)) {
+    return { valid: false, reason: 'reserved name' };
+  }
+  if (PROFANITY_LIST.some(p => lower.includes(p))) {
+    return { valid: false, reason: 'inappropriate name' };
+  }
+  // Reject invisible / directional control characters used in homoglyph attacks
+  if (/[​-‍﻿‪-‮⁦-⁩]/.test(name)) {
+    return { valid: false, reason: 'invalid characters' };
+  }
+  return { valid: true };
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -135,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // ── GET — fetch top 10 ──────────────────────────────────────────────────
     if (req.method === 'GET') {
-      const entries = await redis.zrange('leaderboard', 0, 9, {
+      const entries = await redis.zrange(LEADERBOARD_KEY, 0, 9, {
         rev: true,
         withScores: true,
       }) as (string | number)[];
@@ -185,7 +260,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // ── Top-level shape validation ─────────────────────────────────────────
       const body = req.body as Record<string, unknown>;
 
-      // name: non-empty string
+      // ── Honeypot check (bot trap) ──────────────────────────────────────────
+      // Legitimate clients always send honeypot: '' (empty string).
+      // Bots that blindly fill all POST fields are silently accepted but not stored.
+      if (typeof body.honeypot === 'string' && body.honeypot !== '') {
+        return res.status(200).json({ success: true });
+      }
+
+      // name: non-empty string, max 100 chars
       if (typeof body.name !== 'string' || body.name.trim().length === 0 || body.name.length > 100) {
         return res.status(400).json({ error: 'Invalid submission: name' });
       }
@@ -230,8 +312,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Invalid submission: too many answers' });
       }
 
+      // ── Timing validation ──────────────────────────────────────────────────
+      if (!validateTiming(body.duration as number, body.gameLength as number)) {
+        return res.status(400).json({ error: 'Invalid submission: timing' });
+      }
+
+      // ── Replay attack prevention ───────────────────────────────────────────
+      const hash    = createSubmissionHash(body);
+      const hashKey = `submission:${hash}`;
+      const exists  = await redis.exists(hashKey);
+      if (exists) {
+        return res.status(409).json({ error: 'Duplicate submission' });
+      }
+
       // ── Per-answer validation + server-side scoring ────────────────────────
-      let score       = 0;
+      let score        = 0;
       let correctCount = 0;
 
       for (const raw of body.answers) {
@@ -241,7 +336,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const answer = raw as Record<string, unknown>;
 
-        // countryCode: 2-char lowercase string
+        // countryCode: string, max 4 chars
         if (typeof answer.countryCode !== 'string' || answer.countryCode.length > 4) {
           return res.status(400).json({ error: 'Invalid submission: answer.countryCode' });
         }
@@ -270,16 +365,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (answer.skipped) continue;
 
         // Look up country — reject entire submission if code is unrecognised
-        const country = COUNTRY_MAP.get(answer.countryCode);
+        const country = NORMALISED_COUNTRY_MAP.get(answer.countryCode);
         if (!country) {
           return res.status(400).json({ error: 'Invalid submission: unknown countryCode' });
         }
 
-        // Server recalculates correctness independently
+        // Server recalculates correctness using pre-normalised data from NORMALISED_COUNTRY_MAP
         const isCorrect = serverCheckAnswer(
           answer.playerInput,
-          country.name,
-          country.aliases,
+          country.normName,
+          country.normAliases,
         );
 
         if (isCorrect) {
@@ -303,6 +398,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Invalid submission: name empty after sanitisation' });
       }
 
+      // ── Name content validation ────────────────────────────────────────────
+      const nameCheck = validateName(name);
+      if (!nameCheck.valid) {
+        return res.status(400).json({ error: `Invalid submission: ${nameCheck.reason}` });
+      }
+
       const entry: LeaderboardEntry = {
         id:           randomUUID(),
         name,
@@ -318,10 +419,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Store in sorted set using server-verified score as the sort key.
       // UUID in entry prevents duplicate-member collisions.
       const memberKey = JSON.stringify(entry);
-      await redis.zadd('leaderboard', { score: entry.score, member: memberKey });
+      await redis.zadd(LEADERBOARD_KEY, { score: entry.score, member: memberKey });
 
-      // Keep only top 50 entries to prevent unbounded growth.
-      await redis.zremrangebyrank('leaderboard', 0, -51);
+      // Keep only top 1000 entries to prevent unbounded growth.
+      await redis.zremrangebyrank(LEADERBOARD_KEY, 0, -1001);
+
+      // Record this submission's hash (TTL 24 h) to block replay attacks.
+      await redis.set(hashKey, 1, { ex: 86400 });
 
       return res.status(200).json({ success: true });
     }

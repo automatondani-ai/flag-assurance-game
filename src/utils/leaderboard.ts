@@ -23,6 +23,8 @@ export type ScoreSubmission = {
   gameLength: number;
   region: string;
   duration: number;
+  /** Honeypot trap — always sent as empty string by legitimate clients. */
+  honeypot?: string;
 };
 
 const API_BASE = '/api/leaderboard';
@@ -44,7 +46,7 @@ export async function saveScore(submission: ScoreSubmission): Promise<void> {
     await fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(submission),
+      body: JSON.stringify({ ...submission, honeypot: '' }),
     });
   } catch (err) {
     console.error('Leaderboard save error:', err);

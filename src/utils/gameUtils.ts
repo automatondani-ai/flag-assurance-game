@@ -18,8 +18,9 @@ export function doubleShuffleArray<T>(arr: T[]): T[] {
   return [...first.slice(offset), ...first.slice(0, offset)];
 }
 
-export function normalizeInput(input: string): string {
-  return input.trim().toLowerCase();
+/** NFC + lower-case — mirrors the server-side normaliseString in api/leaderboard.ts. */
+export function normaliseString(input: string): string {
+  return input.normalize('NFC').toLowerCase();
 }
 
 import Fuse from 'fuse.js';
@@ -35,13 +36,13 @@ export function checkAnswer(input: string, correctName: string): { correct: bool
   // Input length guard: prevent Fuse.js ReDoS on pathologically long strings.
   if (input.trim().length > 45) return { correct: false, resolvedName: correctName };
 
-  const normalized = input.trim().toLowerCase();
-  const results = fuse.search(normalized);
+  const normalised = normaliseString(input.trim());
+  const results = fuse.search(normalised);
 
   if (results.length === 0) return { correct: false, resolvedName: correctName };
 
   const bestMatch = results[0].item.name;
-  const correct = bestMatch.toLowerCase() === correctName.toLowerCase();
+  const correct = normaliseString(bestMatch) === normaliseString(correctName);
 
   return { correct, resolvedName: bestMatch };
 }
