@@ -14,7 +14,7 @@
 import { Redis } from '@upstash/redis';
 import { randomUUID } from 'crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { COUNTRY_MAP } from './countries';
+import { COUNTRY_MAP } from './countries.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
