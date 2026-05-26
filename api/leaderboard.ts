@@ -1,15 +1,17 @@
 /**
- * Global leaderboard API — backed by Vercel KV (Upstash Redis).
+ * Global leaderboard API — backed by Upstash Redis (Vercel KV integration).
  *
- * Required environment variables (set via Vercel Storage → KV integration):
+ * Required environment variables (Vercel Storage → KV → flag-leaderboard):
  *   KV_REST_API_URL   — Upstash Redis REST endpoint
  *   KV_REST_API_TOKEN — read/write token
- *
- * The @vercel/kv package reads these variables automatically; no manual
- * Redis client initialization is required.
  */
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
 export type LeaderboardEntry = {
   name: string;
@@ -32,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     // Fetch top 10 by score (descending) from Redis sorted set
-    const entries = await kv.zrange('leaderboard', 0, 9, {
+    const entries = await redis.zrange('leaderboard', 0, 9, {
       rev: true,
       withScores: true,
     }) as (string | number)[];
@@ -42,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (let i = 0; i < entries.length; i += 2) {
       try {
         const raw = entries[i];
-        // @vercel/kv may auto-parse JSON objects — handle both string and object
+        // @upstash/redis may auto-parse JSON objects — handle both
         const entry: LeaderboardEntry =
           typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as LeaderboardEntry);
         parsed.push({ ...entry, rank: Math.floor(i / 2) + 1 });
@@ -68,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Store in sorted set with score as the sort key.
     // Unique member key = full JSON so each game session is distinct.
     const memberKey = JSON.stringify(entry);
-    await kv.zadd('leaderboard', {
+    await redis.zadd('leaderboard', {
       score: entry.score,
       member: memberKey,
     });
@@ -76,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Keep only top 50 entries to prevent unbounded growth.
     // ZREMRANGEBYRANK removes from lowest rank (0) up to and including rank -51,
     // which retains only the top 50 highest scores.
-    await kv.zremrangebyrank('leaderboard', 0, -51);
+    await redis.zremrangebyrank('leaderboard', 0, -51);
 
     return res.status(200).json({ success: true });
   }
