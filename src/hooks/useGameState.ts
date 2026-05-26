@@ -131,6 +131,8 @@ function reducer(state: ReducerState, action: Action): ReducerState {
       };
 
     case 'USE_HINT': {
+      // Hint count is client-enforced only, not security-critical.
+      // Hints affect gameplay fairness only, not data integrity.
       // Guard 1: no budget remaining — silently ignore
       if (state.totalHintsRemaining === 0) return state;
 

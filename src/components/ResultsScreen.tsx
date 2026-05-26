@@ -5,7 +5,7 @@ import { getLeaderboard, saveScore, type LeaderboardEntry } from '../utils/leade
 import LeaderboardTable from './LeaderboardTable';
 
 function wikiUrl(name: string) {
-  return `https://en.wikipedia.org/wiki/${name.replace(/ /g, '_')}`;
+  return `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
 }
 
 interface ResultsScreenProps {
