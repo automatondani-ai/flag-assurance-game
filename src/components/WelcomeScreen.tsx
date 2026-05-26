@@ -186,14 +186,14 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
   return (
     <div className="phase-enter min-h-screen px-4 py-10" style={{ background: 'var(--color-bg-green)' }}>
       <div className="w-full max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-10 items-start">
 
           {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
           <div className="space-y-5">
 
             {/* Title + subtitle */}
             <div>
-              <h1 className="font-fredoka leading-none" style={{ fontSize: '4rem', color: 'var(--color-cream)' }}>
+              <h1 className="font-fredoka leading-none" style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', color: 'var(--color-cream)' }}>
                 FLAG<br />EXPLORER
               </h1>
               <p className="font-nunito text-lg mt-2" style={{ color: 'rgba(255,248,240,0.72)' }}>

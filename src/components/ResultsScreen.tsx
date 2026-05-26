@@ -101,7 +101,7 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
   return (
     <div className="phase-enter min-h-screen px-4 py-10" style={{ background: 'var(--color-bg-coral)' }}>
       <div className="w-full max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 items-start">
 
           {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
           <div className="space-y-6">
@@ -282,7 +282,7 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
           </div>
 
           {/* ── RIGHT COLUMN — global leaderboard ───────────────────── */}
-          <div className="md:sticky md:top-6 self-start">
+          <div className="lg:sticky lg:top-6 self-start">
             <p className="font-fredoka text-xl mb-3" style={{ color: 'var(--color-cream)' }}>
               🏆 GLOBAL TOP 10
             </p>

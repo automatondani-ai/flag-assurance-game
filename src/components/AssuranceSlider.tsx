@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 
 interface AssuranceSliderProps {
   value: number;
@@ -11,13 +11,6 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
   const isTransitioning = useRef(false);
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const calculateValue = useCallback((clientX: number): number => {
-    if (!trackRef.current) return 0;
-    const rect = trackRef.current.getBoundingClientRect();
-    const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    return Math.round(pct * 100);
-  }, []);
-
   const startTransition = useCallback(() => {
     isTransitioning.current = true;
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -26,54 +19,28 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
     }, 150);
   }, []);
 
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
-      onChange(calculateValue(e.clientX));
-    };
-    const onMouseUp = () => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
-      startTransition();
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      if (!isDragging.current) return;
-      e.preventDefault();
-      onChange(calculateValue(e.touches[0].clientX));
-    };
-    const onTouchEnd = () => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
-      startTransition();
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [calculateValue, onChange, startTransition]);
-
-  const handleKnobMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    isTransitioning.current = false;
+  const updateValue = (clientX: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    onChange(Math.round(pct * 100));
   };
 
-  const handleKnobTouchStart = (e: React.TouchEvent) => {
-    e.stopPropagation();
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
     isDragging.current = true;
     isTransitioning.current = false;
+    updateValue(e.clientX);
   };
 
-  const handleTrackClick = (e: React.MouseEvent) => {
-    if (isDragging.current) return;
-    onChange(calculateValue(e.clientX));
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    updateValue(e.clientX);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
     startTransition();
   };
 
@@ -94,12 +61,14 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
         </span>
       </div>
 
-      {/* Track */}
+      {/* Track — pointer events handle all mouse + touch interaction */}
       <div
         ref={trackRef}
-        onClick={handleTrackClick}
-        className="relative h-3 rounded-full cursor-pointer"
-        style={{ background: 'rgba(255,255,255,0.12)' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className="relative h-4 rounded-full cursor-pointer"
+        style={{ background: 'rgba(255,255,255,0.12)', touchAction: 'none' }}
       >
         {/* Gold fill */}
         <div
@@ -107,18 +76,18 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
           style={{ width: `${value}%`, background: 'var(--color-gold)' }}
         />
 
-        {/* Knob — 28px gold circle with white border */}
+        {/* Knob — pointer-events: none so track handles all events */}
         <div
-          onMouseDown={handleKnobMouseDown}
-          onTouchStart={handleKnobTouchStart}
           className={[
             'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
-            'w-7 h-7 rounded-full cursor-grab active:cursor-grabbing',
+            'rounded-full pointer-events-none',
             'shadow-lg',
             knobTransition,
           ].join(' ')}
           style={{
             left: `${value}%`,
+            width: 'clamp(28px, 5vw, 36px)',
+            height: 'clamp(28px, 5vw, 36px)',
             background: 'var(--color-gold)',
             border: '3px solid white',
             boxShadow: '0 2px 8px rgba(0,0,0,0.3)',

@@ -97,8 +97,43 @@ export default function GameScreen({
         </div>
       </div>
 
+      {/* ── Mobile top bar — player / score / round (hidden on lg+) ── */}
+      <div className="lg:hidden w-full max-w-5xl mx-auto mb-4">
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-2xl"
+          style={{ background: 'rgba(255,255,255,0.10)' }}
+        >
+          <div>
+            <div className="font-nunito text-xs uppercase tracking-widest" style={{ color: 'rgba(255,248,240,0.6)' }}>
+              COMMANDER
+            </div>
+            <div className="font-fredoka text-lg truncate" style={{ color: 'var(--color-cream)', maxWidth: '120px' }}>
+              {state.playerName}
+            </div>
+          </div>
+          <div className="text-center">
+            <div
+              className="font-fredoka text-2xl tabular-nums"
+              style={{ color: state.score >= 0 ? 'var(--color-gold)' : '#f87171' }}
+            >
+              {state.score >= 0 ? '+' : ''}{state.score}
+            </div>
+            <div className="font-nunito text-xs" style={{ color: 'rgba(255,248,240,0.6)' }}>
+              Round {round} of {state.totalQuestions}
+            </div>
+          </div>
+          <button
+            onClick={() => setShowRestartModal(true)}
+            className="font-fredoka text-sm rounded-full px-3 py-1 border"
+            style={{ borderColor: 'rgba(255,248,240,0.30)', color: 'rgba(255,248,240,0.70)', background: 'transparent', cursor: 'pointer' }}
+          >
+            ↺
+          </button>
+        </div>
+      </div>
+
       {/* ── Two-column layout ──────────────────────────────────────── */}
-      <div className="relative w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-6 items-start">
+      <div className="relative w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-6 items-start">
 
         {/* ── LEFT PANEL ──────────────────────────────────────────── */}
         <div>
@@ -109,31 +144,38 @@ export default function GameScreen({
             <span style={deco({ bottom: '-12px', left: '8px' }, '-8deg', '2rem')}>🎯</span>
             <span style={deco({ bottom: '-18px', right: '18px' }, '15deg', '2rem')}>🌟</span>
 
-            {/* Circle stage */}
+            {/* Circle stage — auto-height, flag anchored at top, grows downward */}
             <div
-              className="circle-stage w-full"
+              className="circle-stage"
               style={{
-                maxWidth: '520px',
-                // Override the CSS aspect-ratio: 1/1 so the circle grows
-                // downward as hints/hearts are added — flag stays anchored.
+                width: 'min(520px, 90vw)',
+                minHeight: 'min(520px, 90vw)',
+                height: 'auto',
                 aspectRatio: 'auto',
-                minHeight: 'min(520px, 80vw)',
-                paddingTop: '3rem',
-                paddingBottom: '2rem',
-                paddingLeft: '2rem',
-                paddingRight: '2rem',
-                gap: '0.75rem',
+                borderRadius: '50%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                padding: '24px 20px 32px',
+                gap: '12px',
+                overflow: 'visible',
+                background: 'var(--color-cream)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
+                position: 'relative',
               }}
             >
-              {/* ── FIX 1: Flag container — aspect-ratio 3/2, no overflow clip ── */}
+              {/* Flag container — fixed proportion, never compresses */}
               <div
-                className="relative flex-shrink-0 w-3/4"
                 style={{
-                  aspectRatio: '3 / 2',
-                  background: '#FFFFFF',
+                  width: '82%',
+                  aspectRatio: '3/2',
+                  flexShrink: 0,
+                  background: '#fff',
                   borderRadius: '4px',
                   border: '1px solid rgba(0,0,0,0.08)',
-                  // overflow NOT set to hidden — was clipping flags like Monaco
+                  overflow: 'hidden',
+                  position: 'relative',
                 }}
               >
                 {!imgLoaded && (
@@ -145,13 +187,20 @@ export default function GameScreen({
                   src={currentCountry.flag}
                   alt="Identify this flag"
                   onLoad={() => setLoadedCode(currentCountry.code)}
-                  className="w-full h-full object-contain p-1 transition-opacity duration-300"
-                  style={{ opacity: imgLoaded ? 1 : 0 }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    opacity: imgLoaded ? 1 : 0,
+                    transition: 'opacity 300ms',
+                  }}
                 />
               </div>
 
-              {/* Progressive hint */}
-              <HintDisplay hintDisplay={state.hintDisplay} hintsUsed={state.hintsUsed} />
+              {/* Progressive hint — never compresses */}
+              <div style={{ width: '82%', flexShrink: 0 }}>
+                <HintDisplay hintDisplay={state.hintDisplay} hintsUsed={state.hintsUsed} />
+              </div>
 
               {/* Answer input */}
               <input
@@ -164,20 +213,17 @@ export default function GameScreen({
                 placeholder="Country name…"
                 className="pill-input"
                 style={{
-                  maxWidth: '320px',
-                  width: '100%',
+                  width: '82%',
+                  flexShrink: 0,
                   textAlign: 'center',
                   opacity: isFeedbackVisible ? 0.5 : 1,
                 }}
               />
 
-              {/* ── Hints section — two rows so both stay inside the circle ── */}
-              {/* Row 1: hearts centered; Row 2: buttons centered side-by-side.  */}
-              {/* maxWidth 260px keeps each row well within the narrow chord at  */}
-              {/* the bottom of the circle (chord ≈ 337px at this depth).        */}
+              {/* Hearts + buttons — never compresses */}
               <div
                 className="flex flex-col items-center gap-2"
-                style={{ width: '100%', maxWidth: '260px' }}
+                style={{ width: '82%', flexShrink: 0 }}
               >
                 {/* Row 1 — hint hearts */}
                 <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
@@ -220,14 +266,14 @@ export default function GameScreen({
           </div>
 
           {/* ── Below-circle controls ─────────────────────────────── */}
-          <div className="mt-6 mx-auto space-y-5" style={{ maxWidth: '520px' }}>
+          <div className="mt-6 mx-auto space-y-5" style={{ maxWidth: 'min(520px, 90vw)' }}>
             <AssuranceSlider value={assurance} onChange={setAssurance} />
 
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
               className={[
-                'btn-gold w-full py-4 text-xl uppercase tracking-wide',
+                'btn-gold w-full py-5 lg:py-4 text-xl uppercase tracking-wide',
                 canSubmit ? 'animate-btn-pulse' : '',
               ].join(' ')}
               style={{ opacity: canSubmit ? 1 : 0.4, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
@@ -266,8 +312,8 @@ export default function GameScreen({
           </div>
         </div>
 
-        {/* ── RIGHT PANEL — score sidebar ──────────────────────────── */}
-        <div className="md:sticky md:top-6 self-start">
+        {/* ── RIGHT PANEL — score sidebar (desktop only) ───────────── */}
+        <div className="hidden lg:block lg:sticky lg:top-6 self-start">
           <div
             className="rounded-2xl p-6 space-y-4"
             style={{
