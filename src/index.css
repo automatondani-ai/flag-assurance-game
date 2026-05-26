@@ -168,6 +168,39 @@ input[type='range']::-moz-range-track {
   background: transparent;
 }
 
+/* ── Outlined button variants (game screen) ─────────────────────────────── */
+.btn-outlined-gold {
+  background: transparent;
+  border: 2px solid var(--color-gold);
+  color: var(--color-gold);
+  border-radius: 9999px;
+  font-family: 'Fredoka One', cursive;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.btn-outlined-gold:hover:not(:disabled) {
+  background: var(--color-gold);
+  color: var(--color-navy-text);
+}
+.btn-outlined-gold:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-outlined-coral {
+  background: transparent;
+  border: 2px solid #E8635A;
+  color: #E8635A;
+  border-radius: 9999px;
+  font-family: 'Fredoka One', cursive;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.btn-outlined-coral:hover {
+  background: #E8635A;
+  color: white;
+}
+
 /* ── Mobile touch targets ────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   button { min-height: 44px; }

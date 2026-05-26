@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { GameState, Country, Continent } from '../types';
 import AssuranceSlider from './AssuranceSlider';
-import HintHearts from './HintHearts';
 import HintDisplay from './HintDisplay';
 
 interface GameScreenProps {
@@ -30,9 +29,6 @@ export default function GameScreen({
   const [showRestartModal, setShowRestartModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [loadedCode, setLoadedCode] = useState<string | null>(null);
-  const imgLoaded = loadedCode === currentCountry.code;
-
   useEffect(() => {
     setInput('');
     setAssurance(0);
@@ -45,10 +41,6 @@ export default function GameScreen({
   function handleSubmit() {
     if (!canSubmit) return;
     onSubmit(input, assurance);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') handleSubmit();
   }
 
   function handleConfirmRestart() {
@@ -144,129 +136,154 @@ export default function GameScreen({
             <span style={deco({ bottom: '-12px', left: '8px' }, '-8deg', '2rem')}>🎯</span>
             <span style={deco({ bottom: '-18px', right: '18px' }, '15deg', '2rem')}>🌟</span>
 
-            {/* Circle stage — auto-height, flag anchored at top, grows downward */}
+            {/* ── Circle — overflow:hidden clips flag to the boundary ── */}
             <div
-              className="circle-stage"
               style={{
-                width: 'min(520px, 90vw)',
-                minHeight: 'min(520px, 90vw)',
-                height: 'auto',
-                aspectRatio: 'auto',
-                borderRadius: '50%',
+                width: 'min(480px, 88vw)',
+                borderRadius: '999px',
+                background: 'var(--color-cream)',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'flex-start',
-                padding: '24px 20px 32px',
-                gap: '12px',
-                overflow: 'visible',
-                background: 'var(--color-cream)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
+                padding: 'clamp(16px, 4vw, 28px)',
+                gap: '10px',
+                overflow: 'hidden',
                 position: 'relative',
+                margin: '0 auto',
               }}
             >
-              {/* Flag container — fixed proportion, never compresses */}
+              {/* FLAG ZONE */}
               <div
                 style={{
-                  width: '82%',
-                  aspectRatio: '3/2',
+                  width: '100%',
+                  aspectRatio: '16/9',
                   flexShrink: 0,
                   background: '#fff',
-                  borderRadius: '4px',
+                  borderRadius: '6px',
                   border: '1px solid rgba(0,0,0,0.08)',
                   overflow: 'hidden',
-                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                {!imgLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center animate-pulse" style={{ background: '#e2e8f0' }}>
-                    <span className="text-4xl select-none text-slate-400">🏳</span>
-                  </div>
-                )}
                 <img
                   src={currentCountry.flag}
-                  alt="Identify this flag"
-                  onLoad={() => setLoadedCode(currentCountry.code)}
+                  alt="Flag"
                   style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'contain',
-                    opacity: imgLoaded ? 1 : 0,
-                    transition: 'opacity 300ms',
+                    display: 'block',
                   }}
                 />
               </div>
 
-              {/* Progressive hint — never compresses */}
-              <div style={{ width: '82%', flexShrink: 0 }}>
+              {/* HINT DISPLAY — only visible when hintsUsed > 0 */}
+              {state.hintsUsed > 0 && (
                 <HintDisplay hintDisplay={state.hintDisplay} hintsUsed={state.hintsUsed} />
-              </div>
+              )}
 
-              {/* Answer input */}
+              {/* ANSWER INPUT */}
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                 disabled={isFeedbackVisible}
-                placeholder="Country name…"
+                placeholder="Country name..."
                 className="pill-input"
-                style={{
-                  width: '82%',
-                  flexShrink: 0,
-                  textAlign: 'center',
-                  opacity: isFeedbackVisible ? 0.5 : 1,
-                }}
+                style={{ width: '100%', opacity: isFeedbackVisible ? 0.5 : 1 }}
               />
 
-              {/* Hearts + buttons — never compresses */}
-              <div
-                className="flex flex-col items-center gap-2"
-                style={{ width: '82%', flexShrink: 0 }}
-              >
-                {/* Row 1 — hint hearts */}
-                <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
+              {/* HEARTS + BUTTONS ROW */}
+              <div style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                {/* Hearts row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '11px', color: '#888', marginRight: '6px', fontFamily: 'Nunito' }}>
+                    HINTS
+                  </span>
+                  {Array.from({ length: 7 }, (_, i) => (
+                    <svg key={i} viewBox="0 0 24 24"
+                         style={{ width: '16px', height: '16px', flexShrink: 0 }}>
+                      <path
+                        d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791
+                           3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457
+                           1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621
+                           5.274 5.181 0 4.069-5.136 8.625-11 14.402z"
+                        fill={i < state.totalHintsRemaining ? '#ef4444' : 'none'}
+                        stroke="#ef4444"
+                        strokeWidth={i < state.totalHintsRemaining ? '0' : '1.5'}
+                      />
+                    </svg>
+                  ))}
+                </div>
 
-                {/* Row 2 — action buttons */}
-                <div className="flex items-center justify-center gap-2">
-                  {/* Hint button */}
+                {/* Hint + Skip buttons */}
+                <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     onClick={onHint}
                     disabled={state.totalHintsRemaining === 0}
-                    className="font-fredoka text-sm px-4 py-1.5 rounded-full border-2 transition-colors duration-150"
-                    style={
-                      state.totalHintsRemaining > 0
-                        ? { borderColor: 'var(--color-gold)', color: 'var(--color-gold)', background: 'transparent', cursor: 'pointer' }
-                        : { borderColor: 'rgba(240,192,64,0.25)', color: 'rgba(240,192,64,0.3)', background: 'transparent', cursor: 'not-allowed' }
-                    }
+                    className="btn-outlined-gold"
+                    style={{ fontSize: '13px', padding: '6px 16px' }}
                   >
-                    {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints'}
+                    💡 Hint
                   </button>
-
-                  {/* Skip button — coral outlined, never disabled */}
                   <button
                     onClick={onSkip}
-                    className="font-fredoka text-sm px-4 py-1.5 rounded-full border-2 transition-colors duration-150"
-                    style={{ borderColor: '#E8635A', color: '#E8635A', background: 'transparent', cursor: 'pointer' }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLButtonElement).style.background = '#E8635A';
-                      (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                      (e.currentTarget as HTMLButtonElement).style.color = '#E8635A';
-                    }}
+                    className="btn-outlined-coral"
+                    style={{ fontSize: '13px', padding: '6px 16px' }}
                   >
                     ⏭ Skip
                   </button>
                 </div>
               </div>
+
+              {/* FEEDBACK — shows briefly after submit */}
+              {isFeedbackVisible && (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'Fredoka One', fontSize: '16px' }}>
+                    {state.lastCorrect
+                      ? <span style={{ color: '#4ade80' }}>
+                          {state.lastResolvedName !== null &&
+                           state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
+                            ? `✓ Correct! (matched: ${state.lastResolvedName})`
+                            : '✓ Correct, Good Job!'}
+                        </span>
+                      : <span style={{ color: '#E8635A' }}>
+                          ✗ Wrong — it was {currentCountry.name}
+                        </span>
+                    }
+                  </div>
+                  {state.lastDelta !== null && (
+                    <div
+                      key={`delta-${state.currentIndex}`}
+                      className="animate-delta-pop"
+                      style={{
+                        fontFamily: 'Fredoka One',
+                        fontSize: '24px',
+                        color: state.lastDelta >= 0 ? 'var(--color-gold)' : '#f87171',
+                        marginTop: '4px',
+                      }}
+                    >
+                      {state.lastDelta >= 0 ? '+' : ''}{state.lastDelta}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           {/* ── Below-circle controls ─────────────────────────────── */}
-          <div className="mt-6 mx-auto space-y-5" style={{ maxWidth: 'min(520px, 90vw)' }}>
+          <div className="mt-6 mx-auto space-y-4" style={{ maxWidth: 'min(480px, 88vw)' }}>
             <AssuranceSlider value={assurance} onChange={setAssurance} />
 
             <button
@@ -280,35 +297,6 @@ export default function GameScreen({
             >
               Submit
             </button>
-
-            {/* Feedback — below submit */}
-            <div className="min-h-[4.5rem] flex flex-col items-center justify-center">
-              {isFeedbackVisible && (
-                <>
-                  <p
-                    className="font-fredoka text-xl text-center"
-                    style={{ color: state.lastCorrect ? '#34d399' : '#f87171' }}
-                  >
-                    {state.lastCorrect
-                      ? state.lastResolvedName !== null &&
-                        state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
-                        ? `✓ Correct! (matched: ${state.lastResolvedName})`
-                        : '✓ Correct, Good Job!'
-                      : `✗ Wrong — it was ${currentCountry.name}`}
-                  </p>
-
-                  {state.lastDelta !== null && (
-                    <p
-                      key={`delta-${state.currentIndex}`}
-                      className="font-fredoka text-3xl animate-delta-pop mt-1"
-                      style={{ color: state.lastDelta >= 0 ? 'var(--color-gold)' : '#f87171' }}
-                    >
-                      {state.lastDelta >= 0 ? '+' : ''}{state.lastDelta}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
           </div>
         </div>
 
@@ -358,7 +346,6 @@ export default function GameScreen({
               </div>
             </div>
 
-            {/* ── FIX 3: Restart button ────────────────────────────── */}
             <button
               onClick={() => setShowRestartModal(true)}
               className="w-full font-fredoka text-sm py-2 px-4 rounded-full border-2 transition-colors duration-150"
