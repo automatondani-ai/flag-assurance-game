@@ -16,12 +16,12 @@ interface LeaderboardTableProps {
   };
 }
 
-/** Medal colour for top-3 ranks on a cream/light background. */
-function rankTextColor(i: number): string {
-  if (i === 0) return 'text-amber-500';   // gold
-  if (i === 1) return 'text-slate-400';   // silver
-  if (i === 2) return 'text-amber-700';   // bronze
-  return 'text-c-navy/50';
+/** Exact hex colour for top-3 ranks and the rest. */
+function rankColor(i: number): string {
+  if (i === 0) return '#D4A853'; // gold
+  if (i === 1) return '#9CA3AF'; // silver
+  if (i === 2) return '#B45309'; // bronze
+  return 'rgba(27,58,107,0.6)';  // navy
 }
 
 export default function LeaderboardTable({
@@ -31,7 +31,7 @@ export default function LeaderboardTable({
 }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
-      <p className="font-nunito text-sm text-c-navy/50 italic text-center py-6">
+      <p className="font-nunito text-sm italic text-center py-6" style={{ color: 'rgba(27,58,107,0.5)' }}>
         No scores yet — be the first!
       </p>
     );
@@ -39,84 +39,120 @@ export default function LeaderboardTable({
 
   return (
     <div>
-      <div className="overflow-y-auto max-h-72">
-        <table className="w-full font-nunito text-[12px] border-collapse">
-          <thead className="sticky top-0 z-10" style={{ background: 'var(--color-cream)' }}>
-            <tr className="border-b border-c-navy/10">
-              {(['#', 'Name', 'Score', 'Acc', 'Time', 'Region'] as const).map(h => (
-                <th
-                  key={h}
-                  className={[
-                    'px-2 py-2 font-nunito font-700 tracking-wide uppercase text-c-navy/40',
-                    h === '#'                    ? 'text-left w-6' :
-                    h === 'Name' || h === 'Region' ? 'text-left'    :
-                    'text-right',
-                  ].join(' ')}
+      {/* No overflow wrapper — all rows always visible */}
+      <table className="w-full font-nunito border-collapse">
+        <thead>
+          <tr className="border-b" style={{ borderColor: 'rgba(27,58,107,0.10)' }}>
+            <th className="px-1 py-2 text-left text-xs font-bold tracking-wide uppercase"
+                style={{ color: 'rgba(27,58,107,0.4)', width: '20px' }}>#</th>
+            <th className="px-1 py-2 text-left text-xs font-bold tracking-wide uppercase"
+                style={{ color: 'rgba(27,58,107,0.4)' }}>Name</th>
+            <th className="px-1 py-2 text-right text-xs font-bold tracking-wide uppercase"
+                style={{ color: 'rgba(27,58,107,0.4)' }}>Score</th>
+            <th className="px-1 py-2 text-right text-xs font-bold tracking-wide uppercase"
+                style={{ color: 'rgba(27,58,107,0.4)' }}>Acc</th>
+            {/* TIME and REGION hidden on mobile, shown on sm+ */}
+            <th className="hidden sm:table-cell px-1 py-2 text-right text-xs font-bold tracking-wide uppercase"
+                style={{ color: 'rgba(27,58,107,0.4)' }}>Time</th>
+            <th className="hidden sm:table-cell px-1 py-2 text-left text-xs font-bold tracking-wide uppercase"
+                style={{ color: 'rgba(27,58,107,0.4)' }}>Region</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, i) => {
+            const isHL = i === highlightIndex;
+            const col  = isHL ? '#D4A853' : rankColor(i);
+            return (
+              <tr
+                key={i}
+                className="border-b"
+                style={{
+                  borderColor: 'rgba(27,58,107,0.05)',
+                  background: isHL ? 'rgba(212,168,83,0.12)' : 'transparent',
+                }}
+              >
+                {/* Rank — medal colour + bold for top 3 */}
+                <td
+                  className="px-1 py-1.5 text-xs tabular-nums"
+                  style={{
+                    color: i < 3 ? rankColor(i) : 'rgba(27,58,107,0.35)',
+                    fontWeight: i < 3 ? 700 : undefined,
+                  }}
                 >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry, i) => {
-              const isHL = i === highlightIndex;
-              const col  = isHL ? 'text-amber-500' : rankTextColor(i);
-              return (
-                <tr
-                  key={i}
-                  className={[
-                    'border-b border-c-navy/5 transition-colors duration-100',
-                    isHL ? 'bg-c-gold/20' : 'hover:bg-c-navy/5',
-                  ].join(' ')}
+                  {i + 1}
+                </td>
+
+                {/* Name — truncated, responsive max-width */}
+                <td
+                  className="px-1 py-1.5 text-xs font-semibold truncate max-w-[90px] sm:max-w-[120px]"
+                  style={{ color: col }}
                 >
-                  {/* Rank — medal colour for top 3 regardless of highlight */}
-                  <td className={`px-2 py-1.5 tabular-nums font-nunito font-semibold ${i < 3 ? rankTextColor(i) : 'text-c-navy/35'}`}>
-                    {i + 1}
-                  </td>
-                  <td className={`px-2 py-1.5 font-nunito font-semibold max-w-[90px] truncate ${col}`}>
-                    {entry.name}
-                  </td>
-                  <td className={`px-2 py-1.5 text-right tabular-nums font-nunito font-semibold ${col}`}>
-                    {entry.score >= 0 ? '+' : ''}{entry.score}
-                  </td>
-                  <td className={`px-2 py-1.5 text-right tabular-nums font-nunito ${isHL ? 'text-amber-500' : 'text-c-navy/45'}`}>
-                    {entry.percentage}%
-                  </td>
-                  <td className={`px-2 py-1.5 text-right tabular-nums whitespace-nowrap font-nunito ${isHL ? 'text-amber-500' : 'text-c-navy/45'}`}>
-                    {formatDuration(entry.duration)}
-                  </td>
-                  <td className={`px-2 py-1.5 max-w-[70px] truncate font-nunito ${isHL ? 'text-amber-500/80' : 'text-c-navy/35'}`}>
-                    {entry.region}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  {entry.name}
+                </td>
+
+                {/* Score */}
+                <td className="px-1 py-1.5 text-xs text-right tabular-nums font-semibold"
+                    style={{ color: col }}>
+                  {entry.score >= 0 ? '+' : ''}{entry.score}
+                </td>
+
+                {/* Accuracy */}
+                <td className="px-1 py-1.5 text-xs text-right tabular-nums"
+                    style={{ color: isHL ? '#D4A853' : 'rgba(27,58,107,0.45)' }}>
+                  {entry.percentage}%
+                </td>
+
+                {/* Time — hidden on mobile */}
+                <td className="hidden sm:table-cell px-1 py-1.5 text-xs text-right tabular-nums whitespace-nowrap"
+                    style={{ color: isHL ? '#D4A853' : 'rgba(27,58,107,0.45)' }}>
+                  {formatDuration(entry.duration)}
+                </td>
+
+                {/* Region — hidden on mobile */}
+                <td className="hidden sm:table-cell px-1 py-1.5 text-xs truncate max-w-[70px]"
+                    style={{ color: isHL ? 'rgba(212,168,83,0.8)' : 'rgba(27,58,107,0.35)' }}>
+                  {entry.region}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Spacer before circle bottom edge */}
+      <div style={{ height: '16px' }} />
 
       {/* "Your Result" — only when the player is outside the top 10 */}
       {currentEntry && (
-        <div className="border-t border-c-navy/10 pt-3 pb-2 px-2">
-          <p className="font-nunito text-[10px] tracking-wide uppercase text-c-navy/40 mb-2 text-center">
+        <div className="border-t pt-3 pb-2 px-2" style={{ borderColor: 'rgba(27,58,107,0.10)' }}>
+          <p className="font-nunito text-[10px] tracking-wide uppercase text-center mb-2"
+             style={{ color: 'rgba(27,58,107,0.40)' }}>
             — Your Result —
           </p>
           <div
             className="rounded-xl px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-0.5"
             style={{ background: 'rgba(27,58,107,0.06)', border: '1px solid rgba(240,192,64,0.4)' }}
           >
-            <span className="font-nunito font-semibold text-[12px] text-c-navy max-w-[100px] truncate">
+            <span className="font-nunito font-semibold text-xs truncate max-w-[100px]"
+                  style={{ color: 'var(--color-navy-text)' }}>
               {currentEntry.name}
             </span>
-            <span className="font-nunito text-[12px] tabular-nums text-c-navy/60">
+            <span className="font-nunito text-xs tabular-nums"
+                  style={{ color: 'rgba(27,58,107,0.6)' }}>
               {currentEntry.score >= 0 ? '+' : ''}{currentEntry.score}
             </span>
-            <span className="font-nunito text-[12px] tabular-nums text-c-navy/60">{currentEntry.percentage}%</span>
-            <span className="font-nunito text-[12px] tabular-nums text-c-navy/60 whitespace-nowrap">
+            <span className="font-nunito text-xs tabular-nums"
+                  style={{ color: 'rgba(27,58,107,0.6)' }}>
+              {currentEntry.percentage}%
+            </span>
+            <span className="font-nunito text-xs tabular-nums whitespace-nowrap"
+                  style={{ color: 'rgba(27,58,107,0.6)' }}>
               {formatDuration(currentEntry.duration)}
             </span>
-            <span className="font-nunito text-[12px] text-c-navy/40 truncate">{currentEntry.region}</span>
+            <span className="font-nunito text-xs truncate max-w-[80px]"
+                  style={{ color: 'rgba(27,58,107,0.4)' }}>
+              {currentEntry.region}
+            </span>
           </div>
         </div>
       )}

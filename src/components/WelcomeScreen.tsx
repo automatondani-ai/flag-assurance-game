@@ -366,13 +366,25 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
               <span style={deco({ bottom: '-18px', right: '36px' }, '8deg', '2rem')}>🎯</span>
               <span style={deco({ bottom: '-20px', left: '-12px' }, '-10deg', '2.5rem')}>✈️</span>
 
-              {/* Circle */}
-              <div className="circle-stage w-full" style={{ padding: '2.5rem 2rem', gap: '0.5rem' }}>
+              {/* Circle — overflow:visible so table rows never clip */}
+              <div
+                className="circle-stage w-full"
+                style={{
+                  padding: 'clamp(16px, 5vw, 28px)',
+                  paddingBottom: 'clamp(40px, 8vw, 56px)',
+                  gap: '0.5rem',
+                  overflow: 'visible',
+                  height: 'auto',
+                  aspectRatio: 'auto',
+                  borderRadius: '50%',
+                }}
+              >
                 <div className="text-[5rem] select-none leading-none mb-1">🌍</div>
                 <p className="font-fredoka text-xl mb-1" style={{ color: 'var(--color-navy-text)' }}>
                   GLOBAL TOP 10
                 </p>
-                <div className="w-full" style={{ maxWidth: '380px', maxHeight: '240px', overflowY: 'auto' }}>
+                {/* No maxHeight, no overflow — show all rows */}
+                <div className="w-full" style={{ maxWidth: '380px' }}>
                   {leaderboardLoading ? (
                     <LeaderboardSkeleton />
                   ) : (
