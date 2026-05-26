@@ -82,98 +82,94 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
     return () => clearInterval(timer);
   }, []); // intentionally once on mount
 
-  const deco = (
-    pos: { top?: string; left?: string; right?: string; bottom?: string },
-    rot = '0deg',
-    size = '2.5rem',
-  ) => ({
-    position: 'absolute' as const,
-    ...pos,
-    fontSize: size,
-    transform: `rotate(${rot})`,
-    opacity: 0.85,
-    pointerEvents: 'none' as const,
-    userSelect: 'none' as const,
-    zIndex: 1,
-    lineHeight: 1,
-  });
-
   return (
-    <div className="phase-enter min-h-screen px-4 py-10" style={{ background: 'var(--color-bg-coral)' }}>
-      <div className="w-full max-w-5xl mx-auto">
+    /* Screen background — decorative emojis live here */
+    <div
+      className="phase-enter min-h-screen px-4 py-10 relative overflow-x-hidden"
+      style={{ background: 'var(--color-bg-coral)' }}
+    >
+      {/* Decorative emojis — 2 on mobile, more on larger screens */}
+      <span className="pointer-events-none select-none"
+            style={{ position: 'absolute', top: '24px', left: '14px', fontSize: '2.5rem', transform: 'rotate(-15deg)', opacity: 0.22, zIndex: 0 }}>
+        🎈
+      </span>
+      <span className="pointer-events-none select-none"
+            style={{ position: 'absolute', top: '30px', right: '20px', fontSize: '2rem', transform: 'rotate(12deg)', opacity: 0.22, zIndex: 0 }}>
+        🎉
+      </span>
+      <span className="hidden sm:block pointer-events-none select-none"
+            style={{ position: 'absolute', top: '30%', left: '12px', fontSize: '2rem', transform: 'rotate(-10deg)', opacity: 0.16, zIndex: 0 }}>
+        🌟
+      </span>
+      <span className="hidden sm:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '80px', right: '16px', fontSize: '2.5rem', transform: 'rotate(15deg)', opacity: 0.16, zIndex: 0 }}>
+        ✈️
+      </span>
+      <span className="hidden lg:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '100px', left: '16px', fontSize: '2rem', transform: 'rotate(-8deg)', opacity: 0.14, zIndex: 0 }}>
+        🗺️
+      </span>
+      <span className="hidden lg:block pointer-events-none select-none"
+            style={{ position: 'absolute', top: '45%', right: '14px', fontSize: '2rem', transform: 'rotate(10deg)', opacity: 0.14, zIndex: 0 }}>
+        🎯
+      </span>
+
+      <div className="relative z-10 w-full max-w-5xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 items-start">
 
           {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
           <div className="space-y-6">
 
-            {/* Circle wrapper */}
-            <div className="relative flex justify-center">
-              {/* Decorative emojis */}
-              <span style={deco({ top: '-20px', left: '-12px' }, '-15deg', '2.5rem')}>🎈</span>
-              <span style={deco({ top: '-14px', right: '32px' }, '12deg', '2rem')}>🎉</span>
-              <span style={deco({ top: '25%', left: '-20px' }, '-10deg', '2rem')}>🌟</span>
-              <span style={deco({ bottom: '-16px', right: '-14px' }, '15deg', '2.5rem')}>✈️</span>
-              <span style={deco({ bottom: '18px', left: '-18px' }, '-8deg', '2rem')}>🗺️</span>
-              <span style={deco({ top: '40%', right: '-18px' }, '10deg', '2rem')}>🎯</span>
+            {/* Results card — overflow:visible so it can grow as needed */}
+            <div
+              className="card-stage text-center"
+              style={{ overflow: 'visible' }}
+            >
+              {/* Trophy / sad face */}
+              <div className="text-[4rem] select-none leading-none">
+                {state.score > 0 ? '🏆' : '😅'}
+              </div>
 
-              {/* Circle */}
-              <div
-                className="circle-stage w-full text-center"
+              {/* Player name */}
+              <p className="font-fredoka text-2xl" style={{ color: 'var(--color-navy-text)' }}>
+                {state.playerName}
+              </p>
+
+              {/* Animated score */}
+              <p
+                className="font-fredoka tabular-nums leading-none"
                 style={{
-                  maxWidth: '520px',
-                  paddingTop: '3.5rem',
-                  paddingBottom: '3rem',
-                  paddingLeft: '2rem',
-                  paddingRight: '2rem',
-                  gap: '0.6rem',
+                  fontSize: '4.5rem',
+                  color: isPositive ? '#d97706' : 'var(--color-bg-coral)',
+                  lineHeight: 1,
                 }}
               >
-                {/* Trophy / sad face */}
-                <div className="text-[4rem] select-none leading-none">
-                  {state.score > 0 ? '🏆' : '😅'}
-                </div>
+                {displayScore >= 0 ? '+' : ''}{displayScore}
+              </p>
 
-                {/* Player name */}
-                <p className="font-fredoka text-2xl" style={{ color: 'var(--color-navy-text)' }}>
-                  {state.playerName}
+              {/* Accuracy bar + percentage */}
+              <div style={{ width: '100%', maxWidth: '260px' }}>
+                <p className="font-fredoka text-xl mb-1" style={{ color: 'rgba(27,58,107,0.65)' }}>
+                  {percentage}% accuracy
                 </p>
-
-                {/* Animated score */}
-                <p
-                  className="font-fredoka tabular-nums leading-none"
-                  style={{
-                    fontSize: '4.5rem',
-                    color: isPositive ? '#d97706' : 'var(--color-bg-coral)',
-                    lineHeight: 1,
-                  }}
+                <div
+                  className="h-2 rounded-full overflow-hidden"
+                  style={{ background: 'rgba(27,58,107,0.12)' }}
                 >
-                  {displayScore >= 0 ? '+' : ''}{displayScore}
-                </p>
-
-                {/* Accuracy bar + percentage */}
-                <div style={{ width: '100%', maxWidth: '260px' }}>
-                  <p className="font-fredoka text-xl mb-1" style={{ color: 'rgba(27,58,107,0.65)' }}>
-                    {percentage}% accuracy
-                  </p>
                   <div
-                    className="h-2 rounded-full overflow-hidden"
-                    style={{ background: 'rgba(27,58,107,0.12)' }}
-                  >
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${Math.max(0, percentage)}%`, background: 'var(--color-gold)' }}
-                    />
-                  </div>
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${Math.max(0, percentage)}%`, background: 'var(--color-gold)' }}
+                  />
                 </div>
-
-                {/* Tier message */}
-                <p
-                  className="font-nunito font-bold text-base italic text-center"
-                  style={{ color: 'rgba(27,58,107,0.7)', maxWidth: '280px' }}
-                >
-                  "{message}"
-                </p>
               </div>
+
+              {/* Tier message */}
+              <p
+                className="font-nunito font-bold text-base italic text-center"
+                style={{ color: 'rgba(27,58,107,0.7)', maxWidth: '280px' }}
+              >
+                "{message}"
+              </p>
             </div>
 
             {/* Stats row */}
@@ -286,9 +282,10 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
             <p className="font-fredoka text-xl mb-3" style={{ color: 'var(--color-cream)' }}>
               🏆 GLOBAL TOP 10
             </p>
+            {/* card-stage; overflow:visible so table rows never clip */}
             <div
-              className="rounded-3xl p-4"
-              style={{ background: 'var(--color-cream)', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+              className="card-stage"
+              style={{ overflow: 'visible', alignItems: 'stretch', padding: '16px' }}
             >
               {leaderboardLoading ? (
                 <LeaderboardSkeleton />

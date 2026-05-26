@@ -53,27 +53,32 @@ export default function GameScreen({
     ? (state.currentIndex / state.totalQuestions) * 100
     : 0;
 
-  const deco = (
-    pos: { top?: string; left?: string; right?: string; bottom?: string },
-    rot = '0deg',
-    size = '2.5rem',
-  ) => ({
-    position: 'absolute' as const,
-    ...pos,
-    fontSize: size,
-    transform: `rotate(${rot})`,
-    opacity: 0.7,
-    pointerEvents: 'none' as const,
-    userSelect: 'none' as const,
-    zIndex: 1,
-    lineHeight: 1,
-  });
-
   return (
-    <div className="phase-enter min-h-screen px-4 py-8" style={{ background: 'var(--color-bg-navy)' }}>
+    /* Screen background — decorative emojis live here, not inside the card */
+    <div
+      className="phase-enter min-h-screen px-4 py-8 relative overflow-x-hidden"
+      style={{ background: 'var(--color-bg-navy)' }}
+    >
+      {/* Decorative emojis — 2 on mobile, more on larger screens */}
+      <span className="pointer-events-none select-none"
+            style={{ position: 'absolute', top: '60px', left: '16px', fontSize: '2.5rem', transform: 'rotate(-12deg)', opacity: 0.12, zIndex: 0 }}>
+        🌍
+      </span>
+      <span className="pointer-events-none select-none"
+            style={{ position: 'absolute', top: '72px', right: '20px', fontSize: '2rem', transform: 'rotate(10deg)', opacity: 0.12, zIndex: 0 }}>
+        ✈️
+      </span>
+      <span className="hidden lg:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '80px', left: '12px', fontSize: '2rem', transform: 'rotate(-8deg)', opacity: 0.10, zIndex: 0 }}>
+        🎯
+      </span>
+      <span className="hidden lg:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '60px', right: '20px', fontSize: '2rem', transform: 'rotate(15deg)', opacity: 0.10, zIndex: 0 }}>
+        🌟
+      </span>
 
       {/* ── Top bar ─────────────────────────────────────────────────── */}
-      <div className="w-full max-w-5xl mx-auto mb-6">
+      <div className="relative z-10 w-full max-w-5xl mx-auto mb-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="h-px flex-1" style={{ background: 'rgba(240,192,64,0.25)' }} />
           <span className="font-fredoka text-sm tracking-widest uppercase" style={{ color: 'rgba(255,248,240,0.4)' }}>
@@ -90,7 +95,7 @@ export default function GameScreen({
       </div>
 
       {/* ── Mobile top bar — player / score / round (hidden on lg+) ── */}
-      <div className="lg:hidden w-full max-w-5xl mx-auto mb-4">
+      <div className="relative z-10 lg:hidden w-full max-w-5xl mx-auto mb-4">
         <div
           className="flex items-center justify-between px-4 py-3 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.10)' }}
@@ -125,146 +130,121 @@ export default function GameScreen({
       </div>
 
       {/* ── Two-column layout ──────────────────────────────────────── */}
-      <div className="relative w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-6 items-start">
+      <div className="relative z-10 w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[3fr_1fr] gap-6 items-start">
 
         {/* ── LEFT PANEL ──────────────────────────────────────────── */}
         <div>
-          <div className="relative flex justify-center">
-            {/* Decorative emojis */}
-            <span style={deco({ top: '-18px', left: '16px' }, '-12deg', '2.5rem')}>🌍</span>
-            <span style={deco({ top: '-20px', right: '28px' }, '10deg', '2rem')}>✈️</span>
-            <span style={deco({ bottom: '-12px', left: '8px' }, '-8deg', '2rem')}>🎯</span>
-            <span style={deco({ bottom: '-18px', right: '18px' }, '15deg', '2rem')}>🌟</span>
+          {/* ── Game card ─────────────────────────────────────────── */}
+          <div className="card-stage">
 
-            {/* ── Game circle — nuclear containment via class + isolation ── */}
-            <div
-              className="game-circle-stage"
-              style={{
-                width: 'min(480px, 88vw)',
-                margin: '0 auto',
-                background: 'var(--color-cream)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
-                borderRadius: '999px',
-                overflow: 'hidden',
-                isolation: 'isolate',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '20px 16px 32px',
-                gap: '12px',
-                position: 'relative',
-                zIndex: 1,
-              }}
-            >
-              {/* FLAG ZONE — sized and clipped by .game-circle-stage .flag-container */}
-              <div className="flag-container">
-                <img src={currentCountry.flag} alt="flag" />
-              </div>
-
-              {/* HINT DISPLAY — only visible when hintsUsed > 0 */}
-              {state.hintsUsed > 0 && (
-                <HintDisplay hintDisplay={state.hintDisplay} hintsUsed={state.hintsUsed} />
-              )}
-
-              {/* ANSWER INPUT */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                disabled={isFeedbackVisible}
-                placeholder="Country name..."
-                className="pill-input"
-                style={{ width: '100%', opacity: isFeedbackVisible ? 0.5 : 1 }}
-              />
-
-              {/* HEARTS + BUTTONS ROW */}
-              <div style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '8px',
-              }}>
-                {/* Hearts row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <span style={{ fontSize: '11px', color: '#888', marginRight: '6px', fontFamily: 'Nunito' }}>
-                    HINTS
-                  </span>
-                  {Array.from({ length: 7 }, (_, i) => (
-                    <svg key={i} viewBox="0 0 24 24"
-                         style={{ width: '16px', height: '16px', flexShrink: 0 }}>
-                      <path
-                        d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791
-                           3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457
-                           1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621
-                           5.274 5.181 0 4.069-5.136 8.625-11 14.402z"
-                        fill={i < state.totalHintsRemaining ? '#ef4444' : 'none'}
-                        stroke="#ef4444"
-                        strokeWidth={i < state.totalHintsRemaining ? '0' : '1.5'}
-                      />
-                    </svg>
-                  ))}
-                </div>
-
-                {/* Hint + Skip buttons */}
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    onClick={onHint}
-                    disabled={state.totalHintsRemaining === 0}
-                    className="btn-outlined-gold"
-                    style={{ fontSize: '13px', padding: '6px 16px' }}
-                  >
-                    💡 Hint
-                  </button>
-                  <button
-                    onClick={onSkip}
-                    className="btn-outlined-coral"
-                    style={{ fontSize: '13px', padding: '6px 16px' }}
-                  >
-                    ⏭ Skip
-                  </button>
-                </div>
-              </div>
-
-              {/* FEEDBACK — shows briefly after submit */}
-              {isFeedbackVisible && (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'Fredoka One', fontSize: '16px' }}>
-                    {state.lastCorrect
-                      ? <span style={{ color: '#4ade80' }}>
-                          {state.lastResolvedName !== null &&
-                           state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
-                            ? `✓ Correct! (matched: ${state.lastResolvedName})`
-                            : '✓ Correct, Good Job!'}
-                        </span>
-                      : <span style={{ color: '#E8635A' }}>
-                          ✗ Wrong — it was {currentCountry.name}
-                        </span>
-                    }
-                  </div>
-                  {state.lastDelta !== null && (
-                    <div
-                      key={`delta-${state.currentIndex}`}
-                      className="animate-delta-pop"
-                      style={{
-                        fontFamily: 'Fredoka One',
-                        fontSize: '24px',
-                        color: state.lastDelta >= 0 ? 'var(--color-gold)' : '#f87171',
-                        marginTop: '4px',
-                      }}
-                    >
-                      {state.lastDelta >= 0 ? '+' : ''}{state.lastDelta}
-                    </div>
-                  )}
-                </div>
-              )}
+            {/* FLAG */}
+            <div className="flag-container">
+              <img src={currentCountry.flag} alt="flag" />
             </div>
+
+            {/* HINT DISPLAY — only visible when hintsUsed > 0 */}
+            {state.hintsUsed > 0 && (
+              <HintDisplay hintDisplay={state.hintDisplay} hintsUsed={state.hintsUsed} />
+            )}
+
+            {/* ANSWER INPUT */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              disabled={isFeedbackVisible}
+              placeholder="Country name..."
+              className="pill-input"
+              style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', opacity: isFeedbackVisible ? 0.5 : 1 }}
+            />
+
+            {/* HEARTS + BUTTONS ROW */}
+            <div style={{
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              {/* Hearts row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '11px', color: '#888', marginRight: '6px', fontFamily: 'Nunito' }}>
+                  HINTS
+                </span>
+                {Array.from({ length: 7 }, (_, i) => (
+                  <svg key={i} viewBox="0 0 24 24"
+                       style={{ width: '16px', height: '16px', flexShrink: 0 }}>
+                    <path
+                      d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791
+                         3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457
+                         1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621
+                         5.274 5.181 0 4.069-5.136 8.625-11 14.402z"
+                      fill={i < state.totalHintsRemaining ? '#ef4444' : 'none'}
+                      stroke="#ef4444"
+                      strokeWidth={i < state.totalHintsRemaining ? '0' : '1.5'}
+                    />
+                  </svg>
+                ))}
+              </div>
+
+              {/* Hint + Skip buttons */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  onClick={onHint}
+                  disabled={state.totalHintsRemaining === 0}
+                  className="btn-outlined-gold"
+                  style={{ fontSize: '13px', padding: '6px 16px' }}
+                >
+                  💡 Hint
+                </button>
+                <button
+                  onClick={onSkip}
+                  className="btn-outlined-coral"
+                  style={{ fontSize: '13px', padding: '6px 16px' }}
+                >
+                  ⏭ Skip
+                </button>
+              </div>
+            </div>
+
+            {/* FEEDBACK — shows briefly after submit */}
+            {isFeedbackVisible && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: 'Fredoka One', fontSize: '16px' }}>
+                  {state.lastCorrect
+                    ? <span style={{ color: '#4ade80' }}>
+                        {state.lastResolvedName !== null &&
+                         state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
+                          ? `✓ Correct! (matched: ${state.lastResolvedName})`
+                          : '✓ Correct, Good Job!'}
+                      </span>
+                    : <span style={{ color: '#E8635A' }}>
+                        ✗ Wrong — it was {currentCountry.name}
+                      </span>
+                  }
+                </div>
+                {state.lastDelta !== null && (
+                  <div
+                    key={`delta-${state.currentIndex}`}
+                    className="animate-delta-pop"
+                    style={{
+                      fontFamily: 'Fredoka One',
+                      fontSize: '24px',
+                      color: state.lastDelta >= 0 ? 'var(--color-gold)' : '#f87171',
+                      marginTop: '4px',
+                    }}
+                  >
+                    {state.lastDelta >= 0 ? '+' : ''}{state.lastDelta}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* ── Below-circle controls ─────────────────────────────── */}
-          <div className="mt-6 mx-auto space-y-4" style={{ maxWidth: 'min(480px, 88vw)' }}>
+          {/* ── Below-card controls ───────────────────────────────── */}
+          <div className="mt-6 mx-auto space-y-4" style={{ maxWidth: '520px' }}>
             <AssuranceSlider value={assurance} onChange={setAssurance} />
 
             <button

@@ -127,10 +127,6 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
    * Rule 3 & 4 & 5: World is a bidirectional toggle.
    * - If all 5 selected → deselect all (back to empty).
    * - Otherwise (0–4 selected) → select all 5.
-   * Rule 4 (auto-deselect World when a region removed) is handled
-   * automatically by isWorldSelected recomputing from size.
-   * Rule 5 (auto-highlight World when all 5 individually selected) is also
-   * automatic — isWorldSelected becomes true once size === 5.
    */
   function toggleWorld() {
     setSelectedContinents(prev =>
@@ -166,26 +162,39 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
     ].join(' ');
   }
 
-  // ── Deco helper ────────────────────────────────────────────────────────────
-  const deco = (
-    pos: { top?: string; left?: string; right?: string; bottom?: string },
-    rot = '0deg',
-    size = '2.5rem',
-  ) => ({
-    position: 'absolute' as const,
-    ...pos,
-    fontSize: size,
-    transform: `rotate(${rot})`,
-    opacity: 0.88,
-    pointerEvents: 'none' as const,
-    userSelect: 'none' as const,
-    zIndex: 1,
-    lineHeight: 1,
-  });
-
   return (
-    <div className="phase-enter min-h-screen px-4 py-10" style={{ background: 'var(--color-bg-green)' }}>
-      <div className="w-full max-w-5xl mx-auto">
+    /* Screen background — decorative emojis live here */
+    <div
+      className="phase-enter min-h-screen px-4 py-10 relative overflow-x-hidden"
+      style={{ background: 'var(--color-bg-green)' }}
+    >
+      {/* Decorative emojis — 2 visible on mobile, more on larger screens */}
+      <span className="pointer-events-none select-none"
+            style={{ position: 'absolute', top: '24px', left: '16px', fontSize: '2.5rem', transform: 'rotate(-15deg)', opacity: 0.20, zIndex: 0 }}>
+        🎡
+      </span>
+      <span className="pointer-events-none select-none"
+            style={{ position: 'absolute', top: '32px', right: '20px', fontSize: '2rem', transform: 'rotate(12deg)', opacity: 0.20, zIndex: 0 }}>
+        🌟
+      </span>
+      <span className="hidden sm:block pointer-events-none select-none"
+            style={{ position: 'absolute', top: '30%', left: '10px', fontSize: '2rem', transform: 'rotate(-12deg)', opacity: 0.15, zIndex: 0 }}>
+        🧭
+      </span>
+      <span className="hidden sm:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '80px', right: '14px', fontSize: '2rem', transform: 'rotate(15deg)', opacity: 0.15, zIndex: 0 }}>
+        🗺️
+      </span>
+      <span className="hidden lg:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '50px', right: '40px', fontSize: '2rem', transform: 'rotate(8deg)', opacity: 0.12, zIndex: 0 }}>
+        🎯
+      </span>
+      <span className="hidden lg:block pointer-events-none select-none"
+            style={{ position: 'absolute', bottom: '40px', left: '10px', fontSize: '2.5rem', transform: 'rotate(-10deg)', opacity: 0.12, zIndex: 0 }}>
+        ✈️
+      </span>
+
+      <div className="relative z-10 w-full max-w-5xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-10 items-start">
 
           {/* ── LEFT COLUMN ─────────────────────────────────────────── */}
@@ -354,44 +363,22 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
             )}
           </div>
 
-          {/* ── RIGHT COLUMN — circle stage ─────────────────────────── */}
-          <div className="flex justify-center">
-            <div className="relative w-full" style={{ maxWidth: '500px' }}>
-
-              {/* Decorative emojis */}
-              <span style={deco({ top: '-22px', left: '-14px' }, '-15deg', '2.5rem')}>🎡</span>
-              <span style={deco({ top: '-14px', right: '36px' }, '12deg', '2rem')}>🌟</span>
-              <span style={deco({ top: '20%', left: '-22px' }, '-12deg', '2rem')}>🧭</span>
-              <span style={deco({ bottom: '16px', right: '-20px' }, '15deg', '2rem')}>🗺️</span>
-              <span style={deco({ bottom: '-18px', right: '36px' }, '8deg', '2rem')}>🎯</span>
-              <span style={deco({ bottom: '-20px', left: '-12px' }, '-10deg', '2.5rem')}>✈️</span>
-
-              {/* Circle — overflow:visible so table rows never clip */}
-              <div
-                className="circle-stage w-full"
-                style={{
-                  padding: 'clamp(16px, 5vw, 28px)',
-                  paddingBottom: 'clamp(40px, 8vw, 56px)',
-                  gap: '0.5rem',
-                  overflow: 'visible',
-                  height: 'auto',
-                  aspectRatio: 'auto',
-                  borderRadius: '50%',
-                }}
-              >
-                <div className="text-[5rem] select-none leading-none mb-1">🌍</div>
-                <p className="font-fredoka text-xl mb-1" style={{ color: 'var(--color-navy-text)' }}>
-                  GLOBAL TOP 10
-                </p>
-                {/* No maxHeight, no overflow — show all rows */}
-                <div className="w-full" style={{ maxWidth: '380px' }}>
-                  {leaderboardLoading ? (
-                    <LeaderboardSkeleton />
-                  ) : (
-                    <LeaderboardTable entries={leaderboard} />
-                  )}
-                </div>
-              </div>
+          {/* ── RIGHT COLUMN — leaderboard card ─────────────────────── */}
+          <div>
+            {/* card-stage centers itself; overflow:visible so table rows are never clipped */}
+            <div
+              className="card-stage"
+              style={{ alignItems: 'stretch', overflow: 'visible', paddingBottom: '24px' }}
+            >
+              <div className="text-[5rem] select-none leading-none text-center">🌍</div>
+              <p className="font-fredoka text-xl text-center" style={{ color: 'var(--color-navy-text)' }}>
+                GLOBAL TOP 10
+              </p>
+              {leaderboardLoading ? (
+                <LeaderboardSkeleton />
+              ) : (
+                <LeaderboardTable entries={leaderboard} />
+              )}
             </div>
           </div>
 
