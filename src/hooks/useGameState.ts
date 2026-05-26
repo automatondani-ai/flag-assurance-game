@@ -1,5 +1,5 @@
 import { useReducer, useRef, useCallback } from 'react';
-import type { GameState, Country, Continent } from '../types';
+import type { GameState, Country, Continent, GameAnswer } from '../types';
 import { doubleShuffleArray, checkAnswer, calculateScoreDelta } from '../utils/gameUtils';
 import { COUNTRIES } from '../data/countries';
 
@@ -11,7 +11,7 @@ type ReducerState = GameState & { queue: Country[] };
 
 type Action =
   | { type: 'START'; playerName: string; queue: Country[]; region: string; gameLength: number }
-  | { type: 'RECORD_ANSWER'; delta: number; correct: boolean; resolvedName: string }
+  | { type: 'RECORD_ANSWER'; delta: number; correct: boolean; resolvedName: string; answer: GameAnswer }
   | { type: 'ADVANCE_ROUND' }
   | { type: 'USE_HINT' }
   | { type: 'SKIP_QUESTION'; duration: number }
@@ -60,6 +60,7 @@ const INITIAL: ReducerState = {
   lastCorrect: null,
   lastResolvedName: null,
   missedCountries: [],
+  answers: [],
   duration: 0,
   region: '',
   gameLength: 0,
@@ -89,6 +90,7 @@ function reducer(state: ReducerState, action: Action): ReducerState {
         lastCorrect: null,
         lastResolvedName: null,
         missedCountries: [],
+        answers: [],
         duration: 0,
         region: action.region,
         gameLength: action.gameLength,
@@ -112,6 +114,7 @@ function reducer(state: ReducerState, action: Action): ReducerState {
         lastDelta: action.delta,
         lastCorrect: action.correct,
         lastResolvedName: action.resolvedName,
+        answers: [...state.answers, action.answer],
       };
     }
 
@@ -155,11 +158,18 @@ function reducer(state: ReducerState, action: Action): ReducerState {
     }
 
     case 'SKIP_QUESTION': {
-      // Add current country to missed (0-delta, no feedback delay, no hint cost)
       const country = state.queue[state.currentIndex];
       const missed = country
         ? [...state.missedCountries, country]
         : state.missedCountries;
+
+      const skipAnswer: GameAnswer = {
+        countryCode: country?.code ?? '',
+        playerInput: '',
+        assurance: 0,
+        usedHint: state.hintsUsed > 0,
+        skipped: true,
+      };
 
       const base = {
         ...state,
@@ -169,6 +179,7 @@ function reducer(state: ReducerState, action: Action): ReducerState {
         lastResolvedName: null,
         hintsUsed: 0,
         hintDisplay: '',
+        answers: [...state.answers, skipAnswer],
       };
 
       // If it's the last question, end the game immediately
@@ -230,14 +241,10 @@ export default function useGameState(): UseGameStateReturn {
           : COUNTRIES.filter(c => continents.includes(c.continent));
 
       // ── 2. Seed-based entropy pre-mix ──────────────────────────────────────
-      // Combine wall-clock time with an extra random value so that rapid
-      // back-to-back sessions (hot-reload, quick "play again") don't share
-      // similar PRNG state entering the primary shuffle.
       const seed = Date.now() + Math.floor(Math.random() * 99999);
 
       const premixed = [...filteredPool];
       for (let i = 0; i < 5; i++) {
-        // Two indices derived from independent linear-congruential steps of seed
         const a = Math.abs((seed * (i + 1) * 9301 + 49297)) % premixed.length;
         const b = Math.abs((seed * (i + 2) * 6271 + 31337)) % premixed.length;
         [premixed[a], premixed[b]] = [premixed[b], premixed[a]];
@@ -258,22 +265,28 @@ export default function useGameState(): UseGameStateReturn {
     if (!input.trim()) return;
     if (timerRef.current) return;
 
-    const { queue, currentIndex } = stateRef.current;
+    const { queue, currentIndex, hintsUsed } = stateRef.current;
     const country = queue[currentIndex];
     if (!country) return;
 
     const { correct, resolvedName } = checkAnswer(input, country.name);
     const delta = calculateScoreDelta(correct, assurance);
 
-    dispatch({ type: 'RECORD_ANSWER', delta, correct, resolvedName });
+    const answer: GameAnswer = {
+      countryCode: country.code,
+      playerInput: input,
+      assurance,
+      usedHint: hintsUsed > 0,
+      skipped: false,
+    };
+
+    dispatch({ type: 'RECORD_ANSWER', delta, correct, resolvedName, answer });
 
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       const isLast = currentIndex >= queue.length - 1;
       if (isLast) {
         const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        // Score is saved in ResultsScreen after it mounts, so the
-        // leaderboard can be refreshed immediately after the POST completes.
         dispatch({ type: 'END', duration });
       } else {
         dispatch({ type: 'ADVANCE_ROUND' });
@@ -285,15 +298,12 @@ export default function useGameState(): UseGameStateReturn {
     dispatch({ type: 'USE_HINT' });
   }, []);
 
-  // Skip the current question — instant (no feedback delay), adds to missed, no hint cost.
-  // Skip is blocked while answer feedback is showing to prevent double-counting missed entries.
   const skipQuestion = useCallback(() => {
     if (timerRef.current) return;
     const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
     dispatch({ type: 'SKIP_QUESTION', duration });
   }, []);
 
-  // Restart with the same player name but a fresh shuffle — goes straight to playing phase.
   const restartGame = useCallback(
     (continents: Continent[], length: number) => {
       if (timerRef.current) {
@@ -303,7 +313,6 @@ export default function useGameState(): UseGameStateReturn {
 
       const { playerName } = stateRef.current;
 
-      // Same filtering + entropy pipeline as startGame
       const filteredPool =
         continents.length === 0
           ? [...COUNTRIES]

@@ -10,6 +10,19 @@ export interface Country {
   aliases?: string[];
 }
 
+/**
+ * One answered (or skipped) question recorded during a game session.
+ * The full answers array is POSTed to the server at game end so the
+ * server can verify and recalculate the score independently.
+ */
+export type GameAnswer = {
+  countryCode: string;  // e.g. "ng"
+  playerInput: string;  // what the player typed (empty string for skips)
+  assurance: number;    // 0–100
+  usedHint: boolean;
+  skipped: boolean;
+};
+
 export interface GameState {
   phase: GamePhase;
   playerName: string;
@@ -24,6 +37,10 @@ export interface GameState {
   duration: number;
   region: string;
   gameLength: number;
+
+  // ── Answer log (sent to server for score verification) ────────────────────
+  /** Accumulates one entry per question as the game progresses. */
+  answers: GameAnswer[];
 
   // ── Hint system ───────────────────────────────────────────────────────────
   /** How many hints have been used on the CURRENT round only. Resets to 0 each round. */

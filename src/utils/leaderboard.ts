@@ -1,12 +1,28 @@
+import type { GameAnswer } from '../types';
+
 export type LeaderboardEntry = {
   name: string;
   score: number;
   percentage: number;
+  correctCount?: number;
   duration: number;
   date: string;
   region: string;
   gameLength: number;
   rank?: number;
+};
+
+/**
+ * What the client POSTs at game end.
+ * The server recalculates score and percentage from the answers array —
+ * the client's in-game score display is for UX only and is never trusted.
+ */
+export type ScoreSubmission = {
+  name: string;
+  answers: GameAnswer[];
+  gameLength: number;
+  region: string;
+  duration: number;
 };
 
 const API_BASE = '/api/leaderboard';
@@ -23,12 +39,12 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   }
 }
 
-export async function saveScore(entry: Omit<LeaderboardEntry, 'rank'>): Promise<void> {
+export async function saveScore(submission: ScoreSubmission): Promise<void> {
   try {
     await fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry),
+      body: JSON.stringify(submission),
     });
   } catch (err) {
     console.error('Leaderboard save error:', err);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { GameState } from '../types';
 import { getPerformanceTier } from '../utils/gameUtils';
-import { getLeaderboard, saveScore, type LeaderboardEntry } from '../utils/leaderboard';
+import { getLeaderboard, saveScore, type LeaderboardEntry, type ScoreSubmission } from '../utils/leaderboard';
 import LeaderboardTable from './LeaderboardTable';
 
 function wikiUrl(name: string) {
@@ -37,20 +37,19 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
 
   useEffect(() => {
-    // Build the entry from the finished game's state
-    const entry: Omit<LeaderboardEntry, 'rank'> = {
+    // Build the submission — server recalculates score from answers independently.
+    // The client's state.score is used only for the on-screen display, not storage.
+    const submission: ScoreSubmission = {
       name:       state.playerName,
-      score:      state.score,
-      percentage,
-      duration:   state.duration,
-      date:       new Date().toISOString(),
-      region:     state.region,
+      answers:    state.answers,
       gameLength: state.gameLength,
+      region:     state.region,
+      duration:   state.duration,
     };
     setLeaderboardLoading(true);
-    // POST the score, then immediately GET the refreshed board so the player
-    // sees their own result ranked correctly.
-    saveScore(entry).then(() =>
+    // POST answers, then immediately GET the refreshed board so the player
+    // sees their server-verified result ranked correctly.
+    saveScore(submission).then(() =>
       getLeaderboard().then(data => {
         setLeaderboard(data);
         setLeaderboardLoading(false);

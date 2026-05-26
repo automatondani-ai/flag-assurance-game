@@ -4,10 +4,17 @@
  * Required environment variables (Vercel Storage → KV → flag-leaderboard):
  *   KV_REST_API_URL   — Upstash Redis REST endpoint
  *   KV_REST_API_TOKEN — read/write token
+ *
+ * Score security model:
+ *   The client POSTs a list of answers (countryCode + playerInput + assurance).
+ *   The server recalculates score, correctCount, and percentage independently
+ *   using its own country list and answer-checking logic. The client's claimed
+ *   score is never trusted — only the server-verified value is stored.
  */
 import { Redis } from '@upstash/redis';
 import { randomUUID } from 'crypto';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { COUNTRY_MAP } from './countries';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -38,6 +45,54 @@ function setSecurityHeaders(res: VercelResponse): void {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 }
 
+/**
+ * Classic Levenshtein edit-distance (DP, O(m*n)).
+ * Used for server-side answer verification — no external dependencies needed.
+ */
+function levenshtein(a: string, b: string): number {
+  const dp = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+  );
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+/**
+ * Server-side answer check:
+ * 1. Exact match against correct name
+ * 2. Exact match against any alias
+ * 3. Levenshtein ≤ 2 against correct name (covers common 1-2 char typos)
+ *
+ * No Fuse.js on the server — pure string operations, no external deps.
+ * Input length is capped at 45 chars (same limit enforced by the client input).
+ */
+function serverCheckAnswer(
+  input: string,
+  correctName: string,
+  aliases: string[] = [],
+): boolean {
+  const trimmed = input.trim();
+  // Mirror the client-side 45-char guard
+  if (trimmed.length > 45) return false;
+  if (trimmed.length === 0) return false;
+
+  const normalised = trimmed.toLowerCase();
+  const target     = correctName.toLowerCase();
+
+  if (normalised === target) return true;
+  if (aliases.some(a => a.toLowerCase() === normalised)) return true;
+  if (levenshtein(normalised, target) <= 2) return true;
+
+  return false;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type LeaderboardEntry = {
@@ -45,6 +100,7 @@ export type LeaderboardEntry = {
   name: string;
   score: number;
   percentage: number;
+  correctCount: number;
   duration: number;
   date: string;
   region: string;
@@ -100,18 +156,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ leaderboard: parsed });
     }
 
-    // ── POST — submit a new score ───────────────────────────────────────────
+    // ── POST — verify answers and save score ────────────────────────────────
     if (req.method === 'POST') {
 
       // ── Rate limiting ──────────────────────────────────────────────────────
-      // Get the real client IP (Vercel forwards it in x-forwarded-for).
       const ip = (
         (req.headers['x-forwarded-for'] as string) ||
         req.socket?.remoteAddress ||
         'unknown'
       ).split(',')[0].trim();
 
-      // Hourly bucket: 60 submissions per IP per hour (1/min average)
+      // Hourly bucket: 60 submissions per IP per hour
       const hourKey = `ratelimit:hour:${ip}:${Math.floor(Date.now() / 3_600_000)}`;
       const hourCount = await redis.incr(hourKey);
       if (hourCount === 1) await redis.expire(hourKey, 3600);
@@ -127,32 +182,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(429).json({ error: 'Slow down! Too many submissions per minute.' });
       }
 
-      // ── Input validation ───────────────────────────────────────────────────
+      // ── Top-level shape validation ─────────────────────────────────────────
       const body = req.body as Record<string, unknown>;
 
-      // name: non-empty string, max 100 chars (sanitised to 30 below)
+      // name: non-empty string
       if (typeof body.name !== 'string' || body.name.trim().length === 0 || body.name.length > 100) {
-        return res.status(400).json({ error: 'Invalid entry: name' });
+        return res.status(400).json({ error: 'Invalid submission: name' });
       }
 
-      // score: finite number within absolute bounds
-      if (
-        typeof body.score !== 'number' ||
-        !isFinite(body.score) ||
-        body.score < -99999 ||
-        body.score > 99999
-      ) {
-        return res.status(400).json({ error: 'Invalid entry: score' });
-      }
-
-      // percentage: 0–100
-      if (
-        typeof body.percentage !== 'number' ||
-        !isFinite(body.percentage) ||
-        body.percentage < 0 ||
-        body.percentage > 100
-      ) {
-        return res.status(400).json({ error: 'Invalid entry: percentage' });
+      // region: string, max 100 chars
+      if (typeof body.region !== 'string' || body.region.length > 100) {
+        return res.status(400).json({ error: 'Invalid submission: region' });
       }
 
       // duration: non-negative integer, max 24 hours
@@ -162,75 +202,131 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body.duration < 0 ||
         body.duration > 86400
       ) {
-        return res.status(400).json({ error: 'Invalid entry: duration' });
+        return res.status(400).json({ error: 'Invalid submission: duration' });
       }
 
-      // gameLength: positive integer, max 250 (covers all continents combined).
-      // Note: the ALL-mode sentinel (9999) is resolved to queue.length client-side
-      // before submitting, so the actual value here is always a real game length.
+      // gameLength: positive integer, max 250
       if (
         typeof body.gameLength !== 'number' ||
         !Number.isInteger(body.gameLength) ||
         body.gameLength < 1 ||
         body.gameLength > 250
       ) {
-        return res.status(400).json({ error: 'Invalid entry: gameLength' });
+        return res.status(400).json({ error: 'Invalid submission: gameLength' });
       }
 
-      // region: string, max 100 chars
-      if (typeof body.region !== 'string' || body.region.length > 100) {
-        return res.status(400).json({ error: 'Invalid entry: region' });
+      // answers: must be an array
+      if (!Array.isArray(body.answers)) {
+        return res.status(400).json({ error: 'Invalid submission: answers must be an array' });
       }
 
-      const rawScore      = body.score      as number;
-      const rawPercentage = body.percentage as number;
-      const rawDuration   = body.duration   as number;
-      const rawGameLength = body.gameLength as number;
-
-      // ── Score plausibility check ───────────────────────────────────────────
-      // Score validation is best-effort. Full prevention would require stateful
-      // server-side game sessions. These checks block obviously impossible values.
-      // Each question awards ±assurance where assurance is 0–100, so bounds are:
-      const maxPossibleScore = rawGameLength * 100;
-      const minPossibleScore = rawGameLength * -100;
-      if (rawScore > maxPossibleScore || rawScore < minPossibleScore) {
-        return res.status(400).json({ error: 'Invalid entry: score out of range for game length' });
+      // answers.length must match declared gameLength
+      if (body.answers.length !== body.gameLength) {
+        return res.status(400).json({ error: 'Invalid submission: answers count mismatch' });
       }
 
-      // ── Build sanitised entry ──────────────────────────────────────────────
+      // Hard cap: can't have more answers than countries in our dataset
+      if (body.answers.length > 181) {
+        return res.status(400).json({ error: 'Invalid submission: too many answers' });
+      }
+
+      // ── Per-answer validation + server-side scoring ────────────────────────
+      let score       = 0;
+      let correctCount = 0;
+
+      for (const raw of body.answers) {
+        if (typeof raw !== 'object' || raw === null) {
+          return res.status(400).json({ error: 'Invalid submission: malformed answer' });
+        }
+
+        const answer = raw as Record<string, unknown>;
+
+        // countryCode: 2-char lowercase string
+        if (typeof answer.countryCode !== 'string' || answer.countryCode.length > 4) {
+          return res.status(400).json({ error: 'Invalid submission: answer.countryCode' });
+        }
+
+        // assurance: 0–100
+        if (
+          typeof answer.assurance !== 'number' ||
+          !isFinite(answer.assurance) ||
+          answer.assurance < 0 ||
+          answer.assurance > 100
+        ) {
+          return res.status(400).json({ error: 'Invalid submission: answer.assurance' });
+        }
+
+        // skipped: boolean
+        if (typeof answer.skipped !== 'boolean') {
+          return res.status(400).json({ error: 'Invalid submission: answer.skipped' });
+        }
+
+        // playerInput: string (may be empty for skips)
+        if (typeof answer.playerInput !== 'string') {
+          return res.status(400).json({ error: 'Invalid submission: answer.playerInput' });
+        }
+
+        // Skipped questions contribute 0 to score
+        if (answer.skipped) continue;
+
+        // Look up country — reject entire submission if code is unrecognised
+        const country = COUNTRY_MAP.get(answer.countryCode);
+        if (!country) {
+          return res.status(400).json({ error: 'Invalid submission: unknown countryCode' });
+        }
+
+        // Server recalculates correctness independently
+        const isCorrect = serverCheckAnswer(
+          answer.playerInput,
+          country.name,
+          country.aliases,
+        );
+
+        if (isCorrect) {
+          score += answer.assurance as number;
+          correctCount++;
+        } else {
+          score -= answer.assurance as number;
+        }
+      }
+
+      const gameLength = body.gameLength as number;
+      const percentage = gameLength > 0
+        ? Math.round((correctCount / gameLength) * 100)
+        : 0;
+
+      // ── Build and store entry ──────────────────────────────────────────────
       const name   = sanitise(String(body.name)).slice(0, 30);
       const region = sanitise(String(body.region)).slice(0, 100);
 
       if (!name) {
-        return res.status(400).json({ error: 'Invalid entry: name empty after sanitisation' });
+        return res.status(400).json({ error: 'Invalid submission: name empty after sanitisation' });
       }
 
       const entry: LeaderboardEntry = {
-        id:         randomUUID(),   // prevents duplicate-member collisions in sorted set
+        id:           randomUUID(),
         name,
-        score:      rawScore,
-        percentage: rawPercentage,
-        duration:   rawDuration,
-        date:       new Date().toISOString(), // always use server time — ignore client-supplied date
+        score,            // server-calculated — client's claimed value is never used
+        percentage,       // server-calculated
+        correctCount,     // server-calculated
+        duration:         body.duration as number,
+        date:             new Date().toISOString(),
         region,
-        gameLength: rawGameLength,
+        gameLength,
       };
 
-      // Store in sorted set with score as the sort key.
-      // The UUID in the entry ensures two identical name/score combos don't collide.
+      // Store in sorted set using server-verified score as the sort key.
+      // UUID in entry prevents duplicate-member collisions.
       const memberKey = JSON.stringify(entry);
       await redis.zadd('leaderboard', { score: entry.score, member: memberKey });
 
       // Keep only top 50 entries to prevent unbounded growth.
-      // ZREMRANGEBYRANK removes from lowest rank (0) up to rank -51,
-      // retaining only the top 50 highest scores.
       await redis.zremrangebyrank('leaderboard', 0, -51);
 
       return res.status(200).json({ success: true });
     }
 
   } catch (err) {
-    // Never expose internal error details to the client
     console.error('[leaderboard] handler error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
