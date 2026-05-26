@@ -201,6 +201,41 @@ input[type='range']::-moz-range-track {
   color: white;
 }
 
+/* ── Game circle — nuclear flag containment ─────────────────────────────── */
+/* !important ensures Tailwind utilities and other cascade layers cannot     */
+/* override the overflow clipping on this stacking context.                  */
+.game-circle-stage {
+  overflow: hidden !important;
+  isolation: isolate !important;
+  position: relative !important;
+}
+
+/* Every direct child is width-constrained — nothing can bust out sideways */
+.game-circle-stage > * {
+  max-width: 100% !important;
+  flex-shrink: 0;
+}
+
+/* Flag wrapper: 88% of circle width, 16/9 aspect, double-overflow guard */
+.game-circle-stage .flag-container {
+  width: 88% !important;
+  max-width: 88% !important;
+  aspect-ratio: 16 / 9;
+  overflow: hidden !important;
+  background: white;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* Flag image: 100% of its container, object-fit keeps it inside */
+.game-circle-stage .flag-container img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
 /* ── Mobile touch targets ────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   button { min-height: 44px; }

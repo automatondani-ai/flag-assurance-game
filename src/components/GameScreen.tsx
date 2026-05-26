@@ -136,48 +136,29 @@ export default function GameScreen({
             <span style={deco({ bottom: '-12px', left: '8px' }, '-8deg', '2rem')}>🎯</span>
             <span style={deco({ bottom: '-18px', right: '18px' }, '15deg', '2rem')}>🌟</span>
 
-            {/* ── Circle — overflow:hidden clips flag to the boundary ── */}
+            {/* ── Game circle — nuclear containment via class + isolation ── */}
             <div
+              className="game-circle-stage"
               style={{
                 width: 'min(480px, 88vw)',
-                borderRadius: '999px',
+                margin: '0 auto',
                 background: 'var(--color-cream)',
                 boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
+                borderRadius: '999px',
+                overflow: 'hidden',
+                isolation: 'isolate',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                padding: 'clamp(16px, 4vw, 28px)',
-                gap: '10px',
-                overflow: 'hidden',
+                padding: '20px 16px 32px',
+                gap: '12px',
                 position: 'relative',
-                margin: '0 auto',
+                zIndex: 1,
               }}
             >
-              {/* FLAG ZONE */}
-              <div
-                style={{
-                  width: '100%',
-                  aspectRatio: '16/9',
-                  flexShrink: 0,
-                  background: '#fff',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(0,0,0,0.08)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <img
-                  src={currentCountry.flag}
-                  alt="Flag"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    display: 'block',
-                  }}
-                />
+              {/* FLAG ZONE — sized and clipped by .game-circle-stage .flag-container */}
+              <div className="flag-container">
+                <img src={currentCountry.flag} alt="flag" />
               </div>
 
               {/* HINT DISPLAY — only visible when hintsUsed > 0 */}
