@@ -206,7 +206,7 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
                 FLAG<br />EXPLORER
               </h1>
               <p className="font-nunito text-lg mt-2" style={{ color: 'rgba(255,248,240,0.72)' }}>
-                Test your flags. Wager your confidence.
+                Test your knowledge of country flags. Wager your confidence.
               </p>
             </div>
 
