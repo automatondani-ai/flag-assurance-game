@@ -35,4 +35,8 @@ export interface GameState {
    * and NEVER resets mid-game — only on startGame / resetGame.
    */
   totalHintsRemaining: number;
+
+  // ── Persistence across sessions ───────────────────────────────────────────
+  /** The name from the most recent game. Survives resetGame so the welcome screen can pre-fill it. */
+  lastPlayerName: string;
 }

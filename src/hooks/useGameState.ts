@@ -68,6 +68,8 @@ const INITIAL: ReducerState = {
   hintsUsed: 0,
   hintDisplay: '',
   totalHintsRemaining: 7,
+  // Persistence — blank until the first game is played
+  lastPlayerName: '',
 };
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -94,6 +96,8 @@ function reducer(state: ReducerState, action: Action): ReducerState {
         hintsUsed: 0,
         hintDisplay: '',
         totalHintsRemaining: 7,
+        // Persist the name so the welcome screen can pre-fill it after reset
+        lastPlayerName: action.playerName,
       };
 
     case 'RECORD_ANSWER': {
@@ -176,7 +180,8 @@ function reducer(state: ReducerState, action: Action): ReducerState {
       return { ...state, phase: 'results', duration: action.duration };
 
     case 'RESET':
-      return INITIAL;
+      // Preserve lastPlayerName so the welcome screen can pre-fill the name input.
+      return { ...INITIAL, lastPlayerName: state.lastPlayerName };
   }
 }
 

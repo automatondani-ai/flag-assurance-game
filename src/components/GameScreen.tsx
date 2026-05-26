@@ -114,8 +114,12 @@ export default function GameScreen({
               className="circle-stage w-full"
               style={{
                 maxWidth: '520px',
+                // Override the CSS aspect-ratio: 1/1 so the circle grows
+                // downward as hints/hearts are added — flag stays anchored.
+                aspectRatio: 'auto',
+                minHeight: 'min(520px, 80vw)',
                 paddingTop: '3rem',
-                paddingBottom: '1.5rem',
+                paddingBottom: '2rem',
                 paddingLeft: '2rem',
                 paddingRight: '2rem',
                 gap: '0.75rem',

@@ -19,7 +19,7 @@ export default function App() {
   }
 
   if (state.phase === 'welcome') {
-    return <WelcomeScreen onStart={handleStart} />;
+    return <WelcomeScreen onStart={handleStart} lastPlayerName={state.lastPlayerName} />;
   }
 
   if (state.phase === 'playing') {

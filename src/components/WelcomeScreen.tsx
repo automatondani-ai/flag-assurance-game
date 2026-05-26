@@ -20,6 +20,8 @@ function LeaderboardSkeleton() {
 
 interface WelcomeScreenProps {
   onStart: (name: string, continents: Continent[], length: number) => void;
+  /** Name from the previous game — pre-fills the explorer name input. */
+  lastPlayerName?: string;
 }
 
 const ALL_CONTINENTS: Continent[] = ['Africa', 'Europe', 'Americas', 'Asia', 'Oceania'];
@@ -54,12 +56,17 @@ function CheckItem({ done, label }: { done: boolean; label: string }) {
   );
 }
 
-export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeScreenProps) {
   // ── State ──────────────────────────────────────────────────────────────────
-  const [name, setName]                         = useState('');
-  // Rule 1: empty on load
+  const [name, setName]                         = useState(lastPlayerName);
+  // Rule 1: empty on first-ever load; pre-filled when returning from a game
   const [selectedContinents, setSelectedContinents] = useState<Set<Continent>>(new Set<Continent>());
   const [gameLength, setGameLength]             = useState<number>(25);
+
+  // Sync when the parent provides a name after mount (e.g. after resetGame)
+  useEffect(() => {
+    if (lastPlayerName) setName(lastPlayerName);
+  }, [lastPlayerName]);
 
   // ── Derived values ──────────────────────────────────────────────────────────
   const trimmed        = name.trim();
