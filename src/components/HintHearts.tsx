@@ -9,8 +9,8 @@ function HeartIcon({ filled, animating }: { filled: boolean; animating: boolean 
   return (
     <svg
       viewBox="0 0 24 24"
-      width="20"
-      height="20"
+      width="18"
+      height="18"
       className={animating ? 'animate-heart-deflate' : ''}
       style={{ display: 'block' }}
     >
@@ -44,7 +44,7 @@ export default function HintHearts({ totalHintsRemaining }: HintHeartsProps) {
       <span className="font-nunito text-[10px] uppercase tracking-wide" style={{ color: 'rgba(27,58,107,0.5)' }}>
         Hints
       </span>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {Array.from({ length: 7 }, (_, i) => (
           <HeartIcon
             key={i}

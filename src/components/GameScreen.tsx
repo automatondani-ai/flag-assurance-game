@@ -114,7 +114,7 @@ export default function GameScreen({
               className="circle-stage w-full"
               style={{
                 maxWidth: '520px',
-                paddingTop: '4rem',
+                paddingTop: '3rem',
                 paddingBottom: '1.5rem',
                 paddingLeft: '2rem',
                 paddingRight: '2rem',
@@ -167,46 +167,50 @@ export default function GameScreen({
                 }}
               />
 
-              {/* ── FIX 2: Hint row — hearts | hint btn | skip btn ─────────── */}
+              {/* ── Hints section — two rows so both stay inside the circle ── */}
+              {/* Row 1: hearts centered; Row 2: buttons centered side-by-side.  */}
+              {/* maxWidth 260px keeps each row well within the narrow chord at  */}
+              {/* the bottom of the circle (chord ≈ 337px at this depth).        */}
               <div
-                className="flex items-center gap-2"
-                style={{ width: '100%', maxWidth: '320px' }}
+                className="flex flex-col items-center gap-2"
+                style={{ width: '100%', maxWidth: '260px' }}
               >
+                {/* Row 1 — hint hearts */}
                 <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
 
-                {/* spacer pushes hint right-of-hearts, skip far right */}
-                <div className="flex-1" />
+                {/* Row 2 — action buttons */}
+                <div className="flex items-center justify-center gap-2">
+                  {/* Hint button */}
+                  <button
+                    onClick={onHint}
+                    disabled={state.totalHintsRemaining === 0}
+                    className="font-fredoka text-sm px-4 py-1.5 rounded-full border-2 transition-colors duration-150"
+                    style={
+                      state.totalHintsRemaining > 0
+                        ? { borderColor: 'var(--color-gold)', color: 'var(--color-gold)', background: 'transparent', cursor: 'pointer' }
+                        : { borderColor: 'rgba(240,192,64,0.25)', color: 'rgba(240,192,64,0.3)', background: 'transparent', cursor: 'not-allowed' }
+                    }
+                  >
+                    {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints'}
+                  </button>
 
-                {/* Hint button */}
-                <button
-                  onClick={onHint}
-                  disabled={state.totalHintsRemaining === 0}
-                  className="font-fredoka text-sm px-4 py-2 rounded-full border-2 transition-colors duration-150"
-                  style={
-                    state.totalHintsRemaining > 0
-                      ? { borderColor: 'var(--color-gold)', color: 'var(--color-gold)', background: 'transparent', cursor: 'pointer' }
-                      : { borderColor: 'rgba(240,192,64,0.25)', color: 'rgba(240,192,64,0.3)', background: 'transparent', cursor: 'not-allowed' }
-                  }
-                >
-                  {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints'}
-                </button>
-
-                {/* Skip button — coral outlined, never disabled */}
-                <button
-                  onClick={onSkip}
-                  className="font-fredoka text-sm px-4 py-2 rounded-full border-2 transition-colors duration-150"
-                  style={{ borderColor: '#E8635A', color: '#E8635A', background: 'transparent', cursor: 'pointer' }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLButtonElement).style.background = '#E8635A';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#E8635A';
-                  }}
-                >
-                  ⏭ Skip
-                </button>
+                  {/* Skip button — coral outlined, never disabled */}
+                  <button
+                    onClick={onSkip}
+                    className="font-fredoka text-sm px-4 py-1.5 rounded-full border-2 transition-colors duration-150"
+                    style={{ borderColor: '#E8635A', color: '#E8635A', background: 'transparent', cursor: 'pointer' }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLButtonElement).style.background = '#E8635A';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#E8635A';
+                    }}
+                  >
+                    ⏭ Skip
+                  </button>
+                </div>
               </div>
             </div>
           </div>
