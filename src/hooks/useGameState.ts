@@ -14,6 +14,7 @@ type Action =
   | { type: 'RECORD_ANSWER'; delta: number; correct: boolean; resolvedName: string }
   | { type: 'ADVANCE_ROUND' }
   | { type: 'USE_HINT' }
+  | { type: 'SKIP_QUESTION'; duration: number }
   | { type: 'END'; duration: number }
   | { type: 'RESET' };
 
@@ -147,6 +148,30 @@ function reducer(state: ReducerState, action: Action): ReducerState {
       };
     }
 
+    case 'SKIP_QUESTION': {
+      // Add current country to missed (0-delta, no feedback delay, no hint cost)
+      const country = state.queue[state.currentIndex];
+      const missed = country
+        ? [...state.missedCountries, country]
+        : state.missedCountries;
+
+      const base = {
+        ...state,
+        missedCountries: missed,
+        lastDelta: null,
+        lastCorrect: null,
+        lastResolvedName: null,
+        hintsUsed: 0,
+        hintDisplay: '',
+      };
+
+      // If it's the last question, end the game immediately
+      if (state.currentIndex >= state.queue.length - 1) {
+        return { ...base, phase: 'results', duration: action.duration };
+      }
+      return { ...base, currentIndex: state.currentIndex + 1 };
+    }
+
     case 'END':
       return { ...state, phase: 'results', duration: action.duration };
 
@@ -163,6 +188,8 @@ export interface UseGameStateReturn {
   startGame: (playerName: string, continents: Continent[], length: number) => void;
   submitAnswer: (input: string, assurance: number) => void;
   useHint: () => void;
+  skipQuestion: () => void;
+  restartGame: (continents: Continent[], length: number) => void;
   resetGame: () => void;
 }
 
@@ -251,6 +278,46 @@ export default function useGameState(): UseGameStateReturn {
     dispatch({ type: 'USE_HINT' });
   }, []);
 
+  // Skip the current question — instant (no feedback delay), adds to missed, no hint cost.
+  // Skip is blocked while answer feedback is showing to prevent double-counting missed entries.
+  const skipQuestion = useCallback(() => {
+    if (timerRef.current) return;
+    const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    dispatch({ type: 'SKIP_QUESTION', duration });
+  }, []);
+
+  // Restart with the same player name but a fresh shuffle — goes straight to playing phase.
+  const restartGame = useCallback(
+    (continents: Continent[], length: number) => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      const { playerName } = stateRef.current;
+
+      // Same filtering + entropy pipeline as startGame
+      const filteredPool =
+        continents.length === 0
+          ? [...COUNTRIES]
+          : COUNTRIES.filter(c => continents.includes(c.continent));
+
+      const seed = Date.now() + Math.floor(Math.random() * 99999);
+      const premixed = [...filteredPool];
+      for (let i = 0; i < 5; i++) {
+        const a = Math.abs((seed * (i + 1) * 9301 + 49297)) % premixed.length;
+        const b = Math.abs((seed * (i + 2) * 6271 + 31337)) % premixed.length;
+        [premixed[a], premixed[b]] = [premixed[b], premixed[a]];
+      }
+
+      const queue = doubleShuffleArray(premixed).slice(0, Math.min(length, premixed.length));
+      const region = continents.length >= ALL_CONTINENT_COUNT ? 'World' : continents.join(', ');
+      startTimeRef.current = Date.now();
+      dispatch({ type: 'START', playerName, queue, region, gameLength: queue.length });
+    },
+    [],
+  );
+
   const resetGame = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -260,5 +327,5 @@ export default function useGameState(): UseGameStateReturn {
   }, []);
 
   const { queue, ...gameState } = reducerState;
-  return { state: gameState, queue, startGame, submitAnswer, useHint, resetGame };
+  return { state: gameState, queue, startGame, submitAnswer, useHint, skipQuestion, restartGame, resetGame };
 }

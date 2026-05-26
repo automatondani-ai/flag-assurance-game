@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { GameState, Country } from '../types';
+import type { GameState, Country, Continent } from '../types';
 import AssuranceSlider from './AssuranceSlider';
 import HintHearts from './HintHearts';
 import HintDisplay from './HintDisplay';
@@ -9,11 +9,25 @@ interface GameScreenProps {
   currentCountry: Country;
   onSubmit: (input: string, assurance: number) => void;
   onHint: () => void;
+  onSkip: () => void;
+  onRestart: (continents: Continent[], length: number) => void;
+  gameContinents: Continent[];
+  gameLength: number;
 }
 
-export default function GameScreen({ state, currentCountry, onSubmit, onHint }: GameScreenProps) {
+export default function GameScreen({
+  state,
+  currentCountry,
+  onSubmit,
+  onHint,
+  onSkip,
+  onRestart,
+  gameContinents,
+  gameLength,
+}: GameScreenProps) {
   const [input, setInput] = useState('');
   const [assurance, setAssurance] = useState(0);
+  const [showRestartModal, setShowRestartModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [loadedCode, setLoadedCode] = useState<string | null>(null);
@@ -35,6 +49,11 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') handleSubmit();
+  }
+
+  function handleConfirmRestart() {
+    setShowRestartModal(false);
+    onRestart(gameContinents, gameLength);
   }
 
   const round       = state.currentIndex + 1;
@@ -102,17 +121,15 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
                 gap: '0.75rem',
               }}
             >
-              {/* Flag */}
+              {/* ── FIX 1: Flag container — aspect-ratio 3/2, no overflow clip ── */}
               <div
-                className="relative flex-shrink-0"
+                className="relative flex-shrink-0 w-3/4"
                 style={{
-                  width: '100%',
-                  maxWidth: '300px',
                   aspectRatio: '3 / 2',
-                  background: 'white',
-                  borderRadius: '6px',
-                  overflow: 'hidden',
-                  border: '2px solid rgba(0,0,0,0.08)',
+                  background: '#FFFFFF',
+                  borderRadius: '4px',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  // overflow NOT set to hidden — was clipping flags like Monaco
                 }}
               >
                 {!imgLoaded && (
@@ -150,13 +167,17 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
                 }}
               />
 
-              {/* Hint row */}
+              {/* ── FIX 2: Hint row — hearts | hint btn | skip btn ─────────── */}
               <div
-                className="flex items-center justify-between"
+                className="flex items-center gap-2"
                 style={{ width: '100%', maxWidth: '320px' }}
               >
                 <HintHearts totalHintsRemaining={state.totalHintsRemaining} />
 
+                {/* spacer pushes hint right-of-hearts, skip far right */}
+                <div className="flex-1" />
+
+                {/* Hint button */}
                 <button
                   onClick={onHint}
                   disabled={state.totalHintsRemaining === 0}
@@ -168,6 +189,23 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
                   }
                 >
                   {state.totalHintsRemaining > 0 ? '💡 Hint' : '✕ No Hints'}
+                </button>
+
+                {/* Skip button — coral outlined, never disabled */}
+                <button
+                  onClick={onSkip}
+                  className="font-fredoka text-sm px-4 py-2 rounded-full border-2 transition-colors duration-150"
+                  style={{ borderColor: '#E8635A', color: '#E8635A', background: 'transparent', cursor: 'pointer' }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLButtonElement).style.background = '#E8635A';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#E8635A';
+                  }}
+                >
+                  ⏭ Skip
                 </button>
               </div>
             </div>
@@ -266,6 +304,23 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
               </div>
             </div>
 
+            {/* ── FIX 3: Restart button ────────────────────────────── */}
+            <button
+              onClick={() => setShowRestartModal(true)}
+              className="w-full font-fredoka text-sm py-2 px-4 rounded-full border-2 transition-colors duration-150"
+              style={{ borderColor: 'var(--color-cream)', color: 'var(--color-cream)', background: 'transparent', cursor: 'pointer' }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-cream)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-navy-text)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-cream)';
+              }}
+            >
+              ↺ Restart
+            </button>
+
             <div className="flex justify-between text-xl" style={{ opacity: 0.18 }}>
               <span>🗺️</span>
               <span>🧭</span>
@@ -278,6 +333,50 @@ export default function GameScreen({ state, currentCountry, onSubmit, onHint }: 
         </div>
 
       </div>
+
+      {/* ── Restart confirmation modal ──────────────────────────────── */}
+      {showRestartModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowRestartModal(false)}
+        >
+          <div
+            className="rounded-2xl p-6 shadow-xl mx-4"
+            style={{ background: 'var(--color-cream)', maxWidth: '320px', width: '100%' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2
+              className="font-fredoka text-xl mb-2"
+              style={{ color: 'var(--color-navy-text)' }}
+            >
+              Restart Game?
+            </h2>
+            <p
+              className="font-nunito text-sm mb-6"
+              style={{ color: 'rgba(27,58,107,0.7)' }}
+            >
+              Your current progress will be lost.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRestartModal(false)}
+                className="flex-1 font-fredoka py-2 rounded-full border-2 transition-colors duration-150"
+                style={{ borderColor: 'var(--color-navy-text)', color: 'var(--color-navy-text)', background: 'transparent' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmRestart}
+                className="flex-1 font-fredoka py-2 rounded-full border-none transition-colors duration-150"
+                style={{ background: 'var(--color-gold)', color: 'var(--color-navy-text)', cursor: 'pointer' }}
+              >
+                Restart 🔄
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
