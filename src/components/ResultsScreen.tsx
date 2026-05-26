@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { GameState } from '../types';
 import { getPerformanceTier } from '../utils/gameUtils';
-import { getLeaderboard } from '../utils/leaderboard';
+import { getLeaderboard, saveScore, type LeaderboardEntry } from '../utils/leaderboard';
 import LeaderboardTable from './LeaderboardTable';
 
 function wikiUrl(name: string) {
@@ -13,18 +13,57 @@ interface ResultsScreenProps {
   onReset: () => void;
 }
 
+// ── Loading skeleton — 3 pulsing rows ─────────────────────────────────────────
+function LeaderboardSkeleton() {
+  return (
+    <div className="space-y-3 py-2">
+      <p className="font-nunito text-sm text-center" style={{ color: 'rgba(27,58,107,0.4)' }}>
+        Loading scores...
+      </p>
+      {[0, 1, 2].map(i => (
+        <div key={i} className="h-4 rounded-full animate-pulse" style={{ background: 'rgba(27,58,107,0.12)' }} />
+      ))}
+    </div>
+  );
+}
+
 export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
   const { message, percentage } = getPerformanceTier(state.correctCount, state.totalQuestions);
   const isPositive  = state.score >= 0;
   const [showMissed, setShowMissed] = useState(false);
 
-  const leaderboard = useMemo(() => getLeaderboard(), []);
+  // ── Global leaderboard — save then refresh ─────────────────────────────────
+  const [leaderboard, setLeaderboard]         = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+
+  useEffect(() => {
+    // Build the entry from the finished game's state
+    const entry: Omit<LeaderboardEntry, 'rank'> = {
+      name:       state.playerName,
+      score:      state.score,
+      percentage,
+      duration:   state.duration,
+      date:       new Date().toISOString(),
+      region:     state.region,
+      gameLength: state.gameLength,
+    };
+    setLeaderboardLoading(true);
+    // POST the score, then immediately GET the refreshed board so the player
+    // sees their own result ranked correctly.
+    saveScore(entry).then(() =>
+      getLeaderboard().then(data => {
+        setLeaderboard(data);
+        setLeaderboardLoading(false);
+      }),
+    );
+  }, []); // runs once on results-screen mount
+
   const currentPlayerIndex = leaderboard.findIndex(
     e => e.name === state.playerName && e.score === state.score && e.percentage === percentage,
   );
   const isInTopTen = currentPlayerIndex !== -1;
 
-  // Count-up animation 0 → final score over 1.2s (ease-out cubic)
+  // ── Count-up animation 0 → final score over 1.2s (ease-out cubic) ──────────
   const [displayScore, setDisplayScore] = useState(0);
   useEffect(() => {
     const target = state.score;
@@ -242,7 +281,7 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
             </button>
           </div>
 
-          {/* ── RIGHT COLUMN — leaderboard ──────────────────────────── */}
+          {/* ── RIGHT COLUMN — global leaderboard ───────────────────── */}
           <div className="md:sticky md:top-6 self-start">
             <p className="font-fredoka text-xl mb-3" style={{ color: 'var(--color-cream)' }}>
               🏆 GLOBAL TOP 10
@@ -251,21 +290,25 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
               className="rounded-3xl p-4"
               style={{ background: 'var(--color-cream)', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
             >
-              <LeaderboardTable
-                entries={leaderboard}
-                highlightIndex={isInTopTen ? currentPlayerIndex : undefined}
-                currentEntry={
-                  !isInTopTen
-                    ? {
-                        name: state.playerName,
-                        score: state.score,
-                        percentage,
-                        duration: state.duration,
-                        region: state.region,
-                      }
-                    : undefined
-                }
-              />
+              {leaderboardLoading ? (
+                <LeaderboardSkeleton />
+              ) : (
+                <LeaderboardTable
+                  entries={leaderboard}
+                  highlightIndex={isInTopTen ? currentPlayerIndex : undefined}
+                  currentEntry={
+                    !isInTopTen
+                      ? {
+                          name:       state.playerName,
+                          score:      state.score,
+                          percentage,
+                          duration:   state.duration,
+                          region:     state.region,
+                        }
+                      : undefined
+                  }
+                />
+              )}
             </div>
           </div>
 

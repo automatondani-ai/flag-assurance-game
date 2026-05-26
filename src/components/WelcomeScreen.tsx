@@ -4,6 +4,20 @@ import { COUNTRIES } from '../data/countries';
 import LeaderboardTable from './LeaderboardTable';
 import { getLeaderboard, type LeaderboardEntry } from '../utils/leaderboard';
 
+// ── Loading skeleton — 3 pulsing rows ─────────────────────────────────────────
+function LeaderboardSkeleton() {
+  return (
+    <div className="space-y-3 py-2 w-full" style={{ maxWidth: '380px' }}>
+      <p className="font-nunito text-sm text-center" style={{ color: 'rgba(27,58,107,0.4)' }}>
+        Loading scores...
+      </p>
+      {[0, 1, 2].map(i => (
+        <div key={i} className="h-4 rounded-full animate-pulse" style={{ background: 'rgba(27,58,107,0.12)' }} />
+      ))}
+    </div>
+  );
+}
+
 interface WelcomeScreenProps {
   onStart: (name: string, continents: Continent[], length: number) => void;
 }
@@ -77,9 +91,15 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
     prevCanStart.current = canStart;
   }, [canStart]);
 
-  // ── Leaderboard ─────────────────────────────────────────────────────────────
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  useEffect(() => { setLeaderboard(getLeaderboard()); }, []);
+  // ── Global leaderboard ──────────────────────────────────────────────────────
+  const [leaderboard, setLeaderboard]               = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  useEffect(() => {
+    setLeaderboardLoading(true);
+    getLeaderboard()
+      .then(setLeaderboard)
+      .finally(() => setLeaderboardLoading(false));
+  }, []);
 
   // ── Interaction handlers ────────────────────────────────────────────────────
 
@@ -346,7 +366,11 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
                   GLOBAL TOP 10
                 </p>
                 <div className="w-full" style={{ maxWidth: '380px', maxHeight: '240px', overflowY: 'auto' }}>
-                  <LeaderboardTable entries={leaderboard} />
+                  {leaderboardLoading ? (
+                    <LeaderboardSkeleton />
+                  ) : (
+                    <LeaderboardTable entries={leaderboard} />
+                  )}
                 </div>
               </div>
             </div>

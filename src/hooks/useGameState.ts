@@ -1,7 +1,6 @@
 import { useReducer, useRef, useCallback } from 'react';
 import type { GameState, Country, Continent } from '../types';
 import { doubleShuffleArray, checkAnswer, calculateScoreDelta } from '../utils/gameUtils';
-import { saveScore } from '../utils/leaderboard';
 import { COUNTRIES } from '../data/countries';
 
 // ─── Reducer State ────────────────────────────────────────────────────────────
@@ -238,20 +237,9 @@ export default function useGameState(): UseGameStateReturn {
       timerRef.current = null;
       const isLast = currentIndex >= queue.length - 1;
       if (isLast) {
-        const s = stateRef.current;
         const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        const percentage = s.totalQuestions > 0
-          ? Math.round((s.correctCount / s.totalQuestions) * 100)
-          : 0;
-        saveScore({
-          name: s.playerName,
-          score: s.score,
-          percentage,
-          duration,
-          date: new Date().toISOString(),
-          region: s.region,
-          gameLength: s.gameLength,
-        });
+        // Score is saved in ResultsScreen after it mounts, so the
+        // leaderboard can be refreshed immediately after the POST completes.
         dispatch({ type: 'END', duration });
       } else {
         dispatch({ type: 'ADVANCE_ROUND' });
