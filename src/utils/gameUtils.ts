@@ -33,7 +33,7 @@ const fuse = new Fuse(COUNTRIES, {
 
 export function checkAnswer(input: string, correctName: string): { correct: boolean; resolvedName: string } {
   // Input length guard: prevent Fuse.js ReDoS on pathologically long strings.
-  if (input.trim().length > 100) return { correct: false, resolvedName: correctName };
+  if (input.trim().length > 45) return { correct: false, resolvedName: correctName };
 
   const normalized = input.trim().toLowerCase();
   const results = fuse.search(normalized);

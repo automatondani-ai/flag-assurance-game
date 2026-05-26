@@ -156,6 +156,7 @@ export default function GameScreen({
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               disabled={isFeedbackVisible}
               placeholder="Country name..."
+              maxLength={45}
               className="pill-input"
               style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', opacity: isFeedbackVisible ? 0.5 : 1 }}
             />
