@@ -1,3 +1,13 @@
+/**
+ * Global leaderboard API — backed by Vercel KV (Upstash Redis).
+ *
+ * Required environment variables (set via Vercel Storage → KV integration):
+ *   KV_REST_API_URL   — Upstash Redis REST endpoint
+ *   KV_REST_API_TOKEN — read/write token
+ *
+ * The @vercel/kv package reads these variables automatically; no manual
+ * Redis client initialization is required.
+ */
 import { kv } from '@vercel/kv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
