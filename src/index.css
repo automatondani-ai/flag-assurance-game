@@ -70,6 +70,7 @@ body {
   border-radius: 12px;
   background: white;
   flex-shrink: 0;
+  padding: 4px; /* room for the .flag-img edge, clear of the rounded corners */
 }
 
 @media (max-width: 400px) {
@@ -82,6 +83,15 @@ body {
   max-width: 100%;
   object-fit: contain;
   display: block;
+}
+
+/* ── Flag edge ──────────────────────────────────────────────────────────────── */
+/* Flags sit on white cards, so white areas (Madagascar's hoist band, Japan,
+   Cyprus, Finland, South Korea...) would vanish. drop-shadow traces the flag's
+   painted pixels rather than the <img> box, so the hairline hugs the flag even
+   when object-fit letterboxes it, and follows Nepal's pennant shape. */
+.flag-img {
+  filter: drop-shadow(0 0 1px rgba(11, 42, 74, 0.55));
 }
 
 /* ── Pill input ─────────────────────────────────────────────────────────────── */

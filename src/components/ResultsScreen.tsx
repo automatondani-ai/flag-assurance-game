@@ -238,7 +238,7 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
                             <img
                               src={country.flag}
                               alt={country.name}
-                              className="h-full w-full object-contain"
+                              className="flag-img h-full w-full object-contain"
                             />
                           </div>
                           <div className="p-2">

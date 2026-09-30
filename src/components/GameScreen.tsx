@@ -139,7 +139,7 @@ export default function GameScreen({
 
             {/* FLAG */}
             <div className="flag-container">
-              <img src={currentCountry.flag} alt="flag" />
+              <img src={currentCountry.flag} alt="flag" className="flag-img" />
             </div>
 
             {/* HINT DISPLAY — only visible when hintsUsed > 0 */}
