@@ -2,6 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "crons": [
+    { "path": "/api/leaderboard", "schedule": "0 9 1,15 * *" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

@@ -68,6 +68,7 @@ Every answered or skipped question is accumulated into `state.answers` as a `Gam
 - POST: validates body, checks honeypot, validates timing (≥10 s total, ≥2 s per answer), checks SHA-256 replay hash, recalculates score, stores entry
 - Rate limits: 60/hr and 10/min per IP (Redis time-bucketed keys)
 - Duplicate POSTs return **409**
+- **Keep-alive cron** (`crons` in `vercel.json`): Vercel calls GET `/api/leaderboard` at 09:00 UTC on the 1st and 15th of each month. Upstash hibernates paid databases after 60 days without traffic, and a hibernated database blocks every Vercel deployment ("integration resources failed to provision"). The GET must stay uncached so the call really reaches Redis. Hobby plans only allow crons that run at most once a day
 
 ## Environment variables
 
