@@ -82,10 +82,12 @@ The server throws at cold start if either is missing.
 
 ## Styling conventions
 
-- Fonts: **Fredoka One** for headings/scores/buttons, **Nunito** for body text — loaded from Google Fonts in `index.html`
-- CSS custom properties (defined in `src/index.css`): `--color-bg-green`, `--color-bg-navy`, `--color-bg-coral`, `--color-cream`, `--color-gold`, `--color-navy-text`
-- Screen backgrounds: WelcomeScreen = green, GameScreen = navy, ResultsScreen = coral
-- Reusable CSS classes in `index.css`: `.card-stage` (the main content card), `.flag-container`, `.pill-input`, `.btn-gold`, `.btn-navy`, `.btn-outlined-gold`, `.btn-outlined-coral`
+- The look is shared with Damilola's portfolio and Chronograph: navy backgrounds, white cards, teal accent
+- Fonts (Google Fonts in `index.html`): **Poppins** (`font-heading`) for headings, labels, scores and buttons; **Outfit** (`font-body`) for body text; **Fredoka One** (`font-logo`) only for the FLAG EXPLORER wordmark
+- CSS custom properties (defined in `src/index.css`): `--color-navy`, `--color-navy-deep`, `--color-ink`, `--color-paper`, `--color-sky`, `--color-teal`, `--color-teal-ink`, `--color-coral`, `--color-coral-ink`. Use the `-ink` variants for text on white cards; the plain teal/coral are too light there
+- All three screens use the navy background; each screen root has the `.screen` class (full height below the site bar)
+- Reusable CSS classes in `index.css`: `.card-stage` (the main content card), `.flag-container`, `.pill-input`, `.btn-primary`, `.btn-outlined-teal`, `.btn-outlined-coral`
+- **Shared site bar**: the `<nav class="sb">` strip in `index.html`, styled by `src/site-bar.css`. That file must stay identical to the copies in the portfolio and Chronograph repos. It is 52px tall (`--site-bar-h`), so sticky elements use `lg:top-[76px]`
 - Tailwind v3 is used alongside custom CSS classes — not as a replacement
 - Decorative emoji sit on the **screen background** `div`, never inside `.card-stage`
 

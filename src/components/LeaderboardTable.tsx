@@ -4,7 +4,7 @@ import { formatDuration } from '../utils/leaderboard';
 interface LeaderboardTableProps {
   /** Sorted entries (best first). */
   entries: LeaderboardEntry[];
-  /** 0-based row index to highlight in gold (current player in ResultsScreen). */
+  /** 0-based row index to highlight in teal (current player in ResultsScreen). */
   highlightIndex?: number;
   /** When the current player is outside the top 10, render their result below the table. */
   currentEntry?: {
@@ -21,7 +21,7 @@ function rankColor(i: number): string {
   if (i === 0) return '#D4A853'; // gold
   if (i === 1) return '#9CA3AF'; // silver
   if (i === 2) return '#B45309'; // bronze
-  return 'rgba(27,58,107,0.6)';  // navy
+  return 'rgba(11,42,74,0.6)';  // navy
 }
 
 export default function LeaderboardTable({
@@ -31,7 +31,7 @@ export default function LeaderboardTable({
 }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
-      <p className="font-nunito text-sm italic text-center py-6" style={{ color: 'rgba(27,58,107,0.5)' }}>
+      <p className="font-body text-sm italic text-center py-6" style={{ color: 'rgba(11,42,74,0.5)' }}>
         No scores yet — be the first!
       </p>
     );
@@ -40,42 +40,42 @@ export default function LeaderboardTable({
   return (
     <div>
       {/* No overflow wrapper — all rows always visible */}
-      <table className="w-full font-nunito border-collapse">
+      <table className="w-full font-body border-collapse">
         <thead>
-          <tr className="border-b" style={{ borderColor: 'rgba(27,58,107,0.10)' }}>
+          <tr className="border-b" style={{ borderColor: 'rgba(11,42,74,0.10)' }}>
             <th className="px-1 py-2 text-left text-xs font-bold tracking-wide uppercase"
-                style={{ color: 'rgba(27,58,107,0.4)', width: '20px' }}>#</th>
+                style={{ color: 'rgba(11,42,74,0.4)', width: '20px' }}>#</th>
             <th className="px-1 py-2 text-left text-xs font-bold tracking-wide uppercase"
-                style={{ color: 'rgba(27,58,107,0.4)' }}>Name</th>
+                style={{ color: 'rgba(11,42,74,0.4)' }}>Name</th>
             <th className="px-1 py-2 text-right text-xs font-bold tracking-wide uppercase"
-                style={{ color: 'rgba(27,58,107,0.4)' }}>Score</th>
+                style={{ color: 'rgba(11,42,74,0.4)' }}>Score</th>
             <th className="px-1 py-2 text-right text-xs font-bold tracking-wide uppercase"
-                style={{ color: 'rgba(27,58,107,0.4)' }}>Acc</th>
+                style={{ color: 'rgba(11,42,74,0.4)' }}>Acc</th>
             {/* TIME and REGION hidden on mobile, shown on sm+ */}
             <th className="hidden sm:table-cell px-1 py-2 text-right text-xs font-bold tracking-wide uppercase"
-                style={{ color: 'rgba(27,58,107,0.4)' }}>Time</th>
+                style={{ color: 'rgba(11,42,74,0.4)' }}>Time</th>
             <th className="hidden sm:table-cell px-1 py-2 text-left text-xs font-bold tracking-wide uppercase"
-                style={{ color: 'rgba(27,58,107,0.4)' }}>Region</th>
+                style={{ color: 'rgba(11,42,74,0.4)' }}>Region</th>
           </tr>
         </thead>
         <tbody>
           {entries.map((entry, i) => {
             const isHL = i === highlightIndex;
-            const col  = isHL ? '#D4A853' : rankColor(i);
+            const col  = isHL ? 'var(--color-teal-ink)' : rankColor(i);
             return (
               <tr
                 key={i}
                 className="border-b"
                 style={{
-                  borderColor: 'rgba(27,58,107,0.05)',
-                  background: isHL ? 'rgba(212,168,83,0.12)' : 'transparent',
+                  borderColor: 'rgba(11,42,74,0.05)',
+                  background: isHL ? 'rgba(46,196,166,0.14)' : 'transparent',
                 }}
               >
                 {/* Rank — medal colour + bold for top 3 */}
                 <td
                   className="px-1 py-1.5 text-xs tabular-nums"
                   style={{
-                    color: i < 3 ? rankColor(i) : 'rgba(27,58,107,0.35)',
+                    color: i < 3 ? rankColor(i) : 'rgba(11,42,74,0.35)',
                     fontWeight: i < 3 ? 700 : undefined,
                   }}
                 >
@@ -98,19 +98,19 @@ export default function LeaderboardTable({
 
                 {/* Accuracy */}
                 <td className="px-1 py-1.5 text-xs text-right tabular-nums"
-                    style={{ color: isHL ? '#D4A853' : 'rgba(27,58,107,0.45)' }}>
+                    style={{ color: isHL ? 'var(--color-teal-ink)' : 'rgba(11,42,74,0.45)' }}>
                   {entry.percentage}%
                 </td>
 
                 {/* Time — hidden on mobile */}
                 <td className="hidden sm:table-cell px-1 py-1.5 text-xs text-right tabular-nums whitespace-nowrap"
-                    style={{ color: isHL ? '#D4A853' : 'rgba(27,58,107,0.45)' }}>
+                    style={{ color: isHL ? 'var(--color-teal-ink)' : 'rgba(11,42,74,0.45)' }}>
                   {formatDuration(entry.duration)}
                 </td>
 
                 {/* Region — hidden on mobile */}
                 <td className="hidden sm:table-cell px-1 py-1.5 text-xs truncate max-w-[70px]"
-                    style={{ color: isHL ? 'rgba(212,168,83,0.8)' : 'rgba(27,58,107,0.35)' }}>
+                    style={{ color: isHL ? 'var(--color-teal-ink)' : 'rgba(11,42,74,0.35)' }}>
                   {entry.region}
                 </td>
               </tr>
@@ -124,33 +124,33 @@ export default function LeaderboardTable({
 
       {/* "Your Result" — only when the player is outside the top 10 */}
       {currentEntry && (
-        <div className="border-t pt-3 pb-2 px-2" style={{ borderColor: 'rgba(27,58,107,0.10)' }}>
-          <p className="font-nunito text-[10px] tracking-wide uppercase text-center mb-2"
-             style={{ color: 'rgba(27,58,107,0.40)' }}>
+        <div className="border-t pt-3 pb-2 px-2" style={{ borderColor: 'rgba(11,42,74,0.10)' }}>
+          <p className="font-body text-[10px] tracking-wide uppercase text-center mb-2"
+             style={{ color: 'rgba(11,42,74,0.40)' }}>
             — Your Result —
           </p>
           <div
             className="rounded-xl px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-0.5"
-            style={{ background: 'rgba(27,58,107,0.06)', border: '1px solid rgba(240,192,64,0.4)' }}
+            style={{ background: 'rgba(11,42,74,0.06)', border: '1px solid rgba(46,196,166,0.4)' }}
           >
-            <span className="font-nunito font-semibold text-xs truncate max-w-[100px]"
-                  style={{ color: 'var(--color-navy-text)' }}>
+            <span className="font-body font-semibold text-xs truncate max-w-[100px]"
+                  style={{ color: 'var(--color-ink)' }}>
               {currentEntry.name}
             </span>
-            <span className="font-nunito text-xs tabular-nums"
-                  style={{ color: 'rgba(27,58,107,0.6)' }}>
+            <span className="font-body text-xs tabular-nums"
+                  style={{ color: 'rgba(11,42,74,0.6)' }}>
               {currentEntry.score >= 0 ? '+' : ''}{currentEntry.score}
             </span>
-            <span className="font-nunito text-xs tabular-nums"
-                  style={{ color: 'rgba(27,58,107,0.6)' }}>
+            <span className="font-body text-xs tabular-nums"
+                  style={{ color: 'rgba(11,42,74,0.6)' }}>
               {currentEntry.percentage}%
             </span>
-            <span className="font-nunito text-xs tabular-nums whitespace-nowrap"
-                  style={{ color: 'rgba(27,58,107,0.6)' }}>
+            <span className="font-body text-xs tabular-nums whitespace-nowrap"
+                  style={{ color: 'rgba(11,42,74,0.6)' }}>
               {formatDuration(currentEntry.duration)}
             </span>
-            <span className="font-nunito text-xs truncate max-w-[80px]"
-                  style={{ color: 'rgba(27,58,107,0.4)' }}>
+            <span className="font-body text-xs truncate max-w-[80px]"
+                  style={{ color: 'rgba(11,42,74,0.4)' }}>
               {currentEntry.region}
             </span>
           </div>

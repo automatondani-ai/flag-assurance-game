@@ -2,10 +2,10 @@
  * HintDisplay — renders the progressive letter-reveal string.
  *
  * Rendering rules (per character):
- *   • Letter (a-z, accented): carnival gold, Fredoka One
- *   • '_': navy/35%, Fredoka One
+ *   • Letter (a-z, accented): dark teal, Poppins
+ *   • '_': ink/35%, Poppins
  *   • ' ': whitespace (width preserved)
- *   • Other (-, '): muted navy/45%, shown as-is
+ *   • Other (-, '): muted ink/45%, shown as-is
  *
  * Animation: the newly revealed letter gets a fresh React key on each hint
  * press, causing it to remount and re-run animate-hint-reveal.
@@ -33,10 +33,10 @@ export default function HintDisplay({ hintDisplay, hintsUsed }: HintDisplayProps
         <span
           key={isNewlyRevealed ? `revealed-${hintsUsed}` : `letter-${i}`}
           className={[
-            'font-fredoka',
+            'font-heading',
             isNewlyRevealed ? 'inline-block animate-hint-reveal' : '',
           ].join(' ')}
-          style={{ color: 'var(--color-gold)' }}
+          style={{ color: 'var(--color-teal-ink)' }}
         >
           {char}
         </span>
@@ -45,7 +45,7 @@ export default function HintDisplay({ hintDisplay, hintsUsed }: HintDisplayProps
 
     if (char === '_') {
       return (
-        <span key={`blank-${i}`} className="font-fredoka" style={{ color: 'rgba(27,58,107,0.35)' }}>
+        <span key={`blank-${i}`} className="font-heading" style={{ color: 'rgba(11,42,74,0.35)' }}>
           _
         </span>
       );
@@ -56,7 +56,7 @@ export default function HintDisplay({ hintDisplay, hintsUsed }: HintDisplayProps
     }
 
     return (
-      <span key={`punct-${i}`} style={{ color: 'rgba(27,58,107,0.45)' }}>
+      <span key={`punct-${i}`} style={{ color: 'rgba(11,42,74,0.45)' }}>
         {char}
       </span>
     );
@@ -64,7 +64,7 @@ export default function HintDisplay({ hintDisplay, hintsUsed }: HintDisplayProps
 
   return (
     <div className="flex items-center justify-center py-2 min-h-[44px]">
-      <span className="font-fredoka text-2xl tracking-widest select-none">
+      <span className="font-heading text-2xl tracking-widest select-none">
         {elements}
       </span>
     </div>

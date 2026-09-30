@@ -3,27 +3,37 @@
 @tailwind utilities;
 
 /* ── CSS custom properties ──────────────────────────────────────────────────── */
+/* Navy / teal palette shared with Damilola's portfolio and Chronograph.        */
 :root {
-  --color-bg-green:  #4A9B7F;
-  --color-bg-navy:   #1B3A6B;
-  --color-bg-sky:    #5BA4CF;
-  --color-bg-coral:  #E8635A;
-  --color-bg-yellow: #F5E6A3;
-  --color-bg-teal:   #2D7D6F;
-  --color-cream:     #FFF8F0;
-  --color-gold:      #F0C040;
-  --color-navy-text: #1B3A6B;
-  --color-white:     #FFFFFF;
+  --color-navy:      #0A4B82;  /* screen backgrounds */
+  --color-navy-deep: #073861;  /* text on teal fills */
+  --color-ink:       #0B2A4A;  /* text on white cards */
+  --color-paper:     #FFFFFF;  /* cards, and text on navy */
+  --color-sky:       #7CC6F3;  /* fields still to fill in */
+  --color-teal:      #2EC4A6;  /* main accent on navy: buttons, scores, sliders */
+  --color-teal-ink:  #0B7A68;  /* teal for text on white cards */
+  --color-coral:     #E8635A;  /* wrong answers / skip, on navy */
+  --color-coral-ink: #C0392B;  /* wrong answers, as text on white cards */
+
+  /* Height of the shared site bar (site-bar.css) above every screen */
+  --site-bar-h: 52px;
 }
 
 /* ── Global reset & body ────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 body {
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
+  background: var(--color-navy);
 }
+
+/* Each screen fills the viewport below the site bar */
+.screen { min-height: calc(100vh - var(--site-bar-h)); }
+
+/* Poppins is used for headings, labels and buttons at one weight */
+.font-heading { font-weight: 600; }
 
 /* ── Phase-transition animation ─────────────────────────────────────────────── */
 .phase-enter { animation: fadeSlideIn 400ms ease forwards; }
@@ -48,8 +58,8 @@ body {
   gap: 12px;
   height: auto;
   min-height: 0;
-  background: var(--color-cream);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+  background: var(--color-paper);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
 }
 
 /* ── Flag container ─────────────────────────────────────────────────────────── */
@@ -78,54 +88,40 @@ body {
 .pill-input {
   border-radius: 9999px;
   padding: 0.75rem 1.5rem;
-  border: 2px solid var(--color-navy-text);
-  background: var(--color-cream);
-  font-family: 'Nunito', sans-serif;
+  border: 2px solid var(--color-ink);
+  background: var(--color-paper);
+  font-family: 'Outfit', system-ui, sans-serif;
   font-size: 1rem;
   width: 100%;
   outline: none;
-  color: var(--color-navy-text);
+  color: var(--color-ink);
 }
 .pill-input:focus {
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 3px rgba(240, 192, 64, 0.30);
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(46, 196, 166, 0.30);
 }
 .pill-input::placeholder {
-  color: rgba(27, 58, 107, 0.38);
+  color: rgba(11, 42, 74, 0.38);
 }
 
-/* ── Gold pill button ───────────────────────────────────────────────────────── */
-.btn-gold {
-  background: var(--color-gold);
-  color: var(--color-navy-text);
-  font-family: 'Fredoka One', cursive;
+/* ── Primary (teal) pill button ─────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--color-teal);
+  color: var(--color-navy-deep);
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
   border-radius: 9999px;
   border: none;
   cursor: pointer;
   transition: transform 200ms, filter 200ms;
 }
-.btn-gold:hover:not(:disabled) {
-  transform: scale(1.05);
-  filter: brightness(1.08);
+.btn-primary:hover:not(:disabled) {
+  transform: scale(1.03);
+  filter: brightness(1.06);
 }
-.btn-gold:disabled {
+.btn-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* ── Navy pill button ───────────────────────────────────────────────────────── */
-.btn-navy {
-  background: var(--color-bg-navy);
-  color: var(--color-cream);
-  font-family: 'Fredoka One', cursive;
-  border-radius: 9999px;
-  border: none;
-  cursor: pointer;
-  transition: transform 200ms, filter 200ms;
-}
-.btn-navy:hover {
-  transform: scale(1.03);
-  filter: brightness(1.1);
 }
 
 /* ── Existing animation keyframes (kept for Tailwind animate-* utilities) ────── */
@@ -141,11 +137,11 @@ body {
 }
 
 @keyframes btn-pulse {
-  0%, 100% { box-shadow: 0 0 0 0   rgba(240, 192, 64, 0.00); }
-  50%       { box-shadow: 0 0 0 8px rgba(240, 192, 64, 0.30); }
+  0%, 100% { box-shadow: 0 0 0 0   rgba(46, 196, 166, 0.00); }
+  50%       { box-shadow: 0 0 0 8px rgba(46, 196, 166, 0.30); }
 }
 
-/* ── Range-input overrides (carnival style — circular gold knob) ─────────────── */
+/* ── Range-input overrides (circular teal knob) ──────────────────────────────── */
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -157,7 +153,7 @@ input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 28px;
   height: 28px;
-  background: var(--color-gold);
+  background: var(--color-teal);
   border-radius: 50%;
   border: 3px solid white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -172,7 +168,7 @@ input[type='range']::-webkit-slider-runnable-track {
 input[type='range']::-moz-range-thumb {
   width: 28px;
   height: 28px;
-  background: var(--color-gold);
+  background: var(--color-teal);
   border: 3px solid white;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -185,35 +181,38 @@ input[type='range']::-moz-range-track {
 }
 
 /* ── Outlined button variants (game screen) ─────────────────────────────── */
-.btn-outlined-gold {
+/* They sit on the white game card, so the ink versions of teal/coral are used */
+.btn-outlined-teal {
   background: transparent;
-  border: 2px solid var(--color-gold);
-  color: var(--color-gold);
+  border: 2px solid var(--color-teal-ink);
+  color: var(--color-teal-ink);
   border-radius: 9999px;
-  font-family: 'Fredoka One', cursive;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
   cursor: pointer;
   transition: all 200ms;
 }
-.btn-outlined-gold:hover:not(:disabled) {
-  background: var(--color-gold);
-  color: var(--color-navy-text);
+.btn-outlined-teal:hover:not(:disabled) {
+  background: var(--color-teal-ink);
+  color: white;
 }
-.btn-outlined-gold:disabled {
+.btn-outlined-teal:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
 .btn-outlined-coral {
   background: transparent;
-  border: 2px solid #E8635A;
-  color: #E8635A;
+  border: 2px solid var(--color-coral-ink);
+  color: var(--color-coral-ink);
   border-radius: 9999px;
-  font-family: 'Fredoka One', cursive;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
   cursor: pointer;
   transition: all 200ms;
 }
 .btn-outlined-coral:hover {
-  background: #E8635A;
+  background: var(--color-coral-ink);
   color: white;
 }
 

@@ -8,11 +8,11 @@ import { getLeaderboard, type LeaderboardEntry } from '../utils/leaderboard';
 function LeaderboardSkeleton() {
   return (
     <div className="space-y-3 py-2 w-full" style={{ maxWidth: '380px' }}>
-      <p className="font-nunito text-sm text-center" style={{ color: 'rgba(27,58,107,0.4)' }}>
+      <p className="font-body text-sm text-center" style={{ color: 'rgba(11,42,74,0.4)' }}>
         Loading scores...
       </p>
       {[0, 1, 2].map(i => (
-        <div key={i} className="h-4 rounded-full animate-pulse" style={{ background: 'rgba(27,58,107,0.12)' }} />
+        <div key={i} className="h-4 rounded-full animate-pulse" style={{ background: 'rgba(11,42,74,0.12)' }} />
       ))}
     </div>
   );
@@ -41,14 +41,14 @@ function CheckItem({ done, label }: { done: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className="font-fredoka text-base leading-none w-4 text-center"
-        style={{ color: done ? '#4ADE80' : 'rgba(255,248,240,0.35)' }}
+        className="font-heading text-base leading-none w-4 text-center"
+        style={{ color: done ? 'var(--color-teal)' : 'rgba(255,255,255,0.35)' }}
       >
         {done ? '✓' : '○'}
       </span>
       <span
-        className="font-nunito text-sm"
-        style={{ color: done ? '#4ADE80' : 'rgba(255,248,240,0.55)' }}
+        className="font-body text-sm"
+        style={{ color: done ? 'var(--color-teal)' : 'rgba(255,255,255,0.55)' }}
       >
         {label}
       </span>
@@ -155,18 +155,18 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
   // ── Chip style ─────────────────────────────────────────────────────────────
   function chipClass(active: boolean): string {
     return [
-      'font-fredoka text-sm px-4 py-1.5 rounded-full border-2 transition-all duration-150 cursor-pointer select-none',
+      'font-heading text-sm px-4 py-1.5 rounded-full border-2 transition-all duration-150 cursor-pointer select-none',
       active
-        ? 'border-c-gold bg-c-gold text-c-navy'
-        : 'border-c-cream/70 bg-transparent text-c-cream hover:bg-white/10',
+        ? 'border-c-teal bg-c-teal text-c-navy-deep'
+        : 'border-white/60 bg-transparent text-white hover:bg-white/10',
     ].join(' ');
   }
 
   return (
     /* Screen background — decorative emojis live here */
     <div
-      className="phase-enter min-h-screen px-4 py-10 relative overflow-x-hidden"
-      style={{ background: 'var(--color-bg-green)' }}
+      className="phase-enter screen px-4 py-10 relative overflow-x-hidden"
+      style={{ background: 'var(--color-navy)' }}
     >
       {/* Decorative emojis — 2 visible on mobile, more on larger screens */}
       <span className="pointer-events-none select-none"
@@ -202,10 +202,10 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
 
             {/* Title + subtitle */}
             <div>
-              <h1 className="font-fredoka leading-none" style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', color: 'var(--color-cream)' }}>
+              <h1 className="font-logo leading-none" style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', color: 'var(--color-paper)' }}>
                 FLAG<br />EXPLORER
               </h1>
-              <p className="font-nunito text-lg mt-2" style={{ color: 'rgba(255,248,240,0.72)' }}>
+              <p className="font-body text-lg mt-2" style={{ color: 'rgba(255,255,255,0.72)' }}>
                 Test your knowledge of country flags. Wager your confidence.
               </p>
             </div>
@@ -225,8 +225,8 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
             {/* ── Field 1: Explorer Name ───────────────────────────── */}
             <div>
               <label
-                className="block font-nunito text-sm mb-2"
-                style={{ color: nameComplete ? '#4ADE80' : '#F59E0B' }}
+                className="block font-body text-sm mb-2"
+                style={{ color: nameComplete ? 'var(--color-teal)' : 'var(--color-sky)' }}
               >
                 {nameComplete ? '① Explorer name ✓' : '① Enter your name'}
               </label>
@@ -240,15 +240,14 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
                   maxLength={32}
                   className="pill-input"
                   style={{
-                    fontFamily: "'Fredoka One', cursive",
-                    border: `3px solid ${nameComplete ? '#4ADE80' : '#F59E0B'}`,
+                    border: `3px solid ${nameComplete ? 'var(--color-teal)' : 'var(--color-sky)'}`,
                     paddingRight: nameComplete ? '3rem' : undefined,
                   }}
                 />
                 {nameComplete && (
                   <span
-                    className="absolute right-4 top-1/2 -translate-y-1/2 font-fredoka text-xl select-none pointer-events-none"
-                    style={{ color: '#4ADE80' }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 font-heading text-xl select-none pointer-events-none"
+                    style={{ color: 'var(--color-teal)' }}
                   >
                     ✓
                   </span>
@@ -262,9 +261,9 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
               <div className="flex items-center gap-2 mb-2">
                 <span
                   className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${!regionComplete ? 'animate-pulse' : ''}`}
-                  style={{ background: regionComplete ? '#4ADE80' : '#F59E0B' }}
+                  style={{ background: regionComplete ? 'var(--color-teal)' : 'var(--color-sky)' }}
                 />
-                <span className="font-fredoka text-sm uppercase tracking-wide" style={{ color: 'var(--color-cream)' }}>
+                <span className="font-heading text-sm uppercase tracking-wide" style={{ color: 'var(--color-paper)' }}>
                   Explore By Region
                 </span>
               </div>
@@ -284,11 +283,11 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
               {/* Validation helper */}
               <div className="mt-2 min-h-[1.25rem]">
                 {regionComplete ? (
-                  <p className="font-nunito text-sm" style={{ color: '#4ADE80' }}>
+                  <p className="font-body text-sm" style={{ color: 'var(--color-teal)' }}>
                     ② Region selected ✓
                   </p>
                 ) : (
-                  <p className="font-nunito text-sm italic" style={{ color: '#F59E0B' }}>
+                  <p className="font-body text-sm italic" style={{ color: 'var(--color-sky)' }}>
                     ② Pick at least one region
                   </p>
                 )}
@@ -299,8 +298,8 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
             <div>
               {/* Label with green dot (always satisfied) */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: '#4ADE80' }} />
-                <span className="font-fredoka text-sm uppercase tracking-wide" style={{ color: 'var(--color-cream)' }}>
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: 'var(--color-teal)' }} />
+                <span className="font-heading text-sm uppercase tracking-wide" style={{ color: 'var(--color-paper)' }}>
                   Game Length
                 </span>
               </div>
@@ -316,16 +315,16 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
 
               {/* Validation + flag count hints */}
               <div className="mt-2 space-y-0.5">
-                <p className="font-nunito text-sm" style={{ color: '#4ADE80' }}>
+                <p className="font-body text-sm" style={{ color: 'var(--color-teal)' }}>
                   ③ Game length set ✓
                 </p>
                 {showAllHint && (
-                  <p className="font-nunito text-xs" style={{ color: 'rgba(255,248,240,0.5)' }}>
+                  <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
                     {pool.length} flags available for your selection
                   </p>
                 )}
                 {showCapNote && (
-                  <p className="font-nunito text-xs" style={{ color: 'var(--color-gold)' }}>
+                  <p className="font-body text-xs" style={{ color: 'var(--color-teal)' }}>
                     Only {pool.length} flags available — game will use all of them
                   </p>
                 )}
@@ -337,19 +336,19 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
               onClick={handleSubmit}
               disabled={!canStart}
               className={[
-                'w-full py-4 px-10 text-xl tracking-wide font-fredoka rounded-full border-none transition-all duration-200',
+                'w-full py-4 px-10 text-xl tracking-wide font-heading rounded-full border-none transition-all duration-200',
                 canStart ? 'cursor-pointer' : 'cursor-not-allowed',
                 canStart && btnBounce ? 'animate-btn-bounce' : '',
               ].join(' ')}
               style={{
-                background: canStart ? 'var(--color-gold)' : 'rgba(148,163,184,0.35)',
-                color: canStart ? 'var(--color-navy-text)' : 'rgba(255,255,255,0.4)',
+                background: canStart ? 'var(--color-teal)' : 'rgba(148,163,184,0.35)',
+                color: canStart ? 'var(--color-navy-deep)' : 'rgba(255,255,255,0.4)',
                 opacity: canStart ? 1 : 0.7,
               }}
             >
               {buttonLabel()}
               {canStart && (
-                <span className="ml-2 font-nunito text-base normal-case font-normal opacity-70">
+                <span className="ml-2 font-body text-base normal-case font-normal opacity-70">
                   · {effectiveLength} rounds
                 </span>
               )}
@@ -357,7 +356,7 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
 
             {/* Flag count — hidden when no regions selected */}
             {pool.length > 0 && (
-              <p className="font-nunito text-xs text-center" style={{ color: 'rgba(255,248,240,0.35)' }}>
+              <p className="font-body text-xs text-center" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 {pool.length} flags in the selected pool
               </p>
             )}
@@ -371,7 +370,7 @@ export default function WelcomeScreen({ onStart, lastPlayerName = '' }: WelcomeS
               style={{ alignItems: 'stretch', overflow: 'visible', paddingBottom: '24px' }}
             >
               <div className="text-[5rem] select-none leading-none text-center">🌍</div>
-              <p className="font-fredoka text-xl text-center" style={{ color: 'var(--color-navy-text)' }}>
+              <p className="font-heading text-xl text-center" style={{ color: 'var(--color-ink)' }}>
                 GLOBAL TOP 10
               </p>
               {leaderboardLoading ? (

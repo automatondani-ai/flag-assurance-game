@@ -7,28 +7,20 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        fredoka: ['"Fredoka One"', 'cursive'],
-        nunito: ['Nunito', 'sans-serif'],
-        // Legacy — kept so any remaining ibm/playfair refs compile
-        playfair: ['"Fredoka One"', 'cursive'],
-        ibm: ['Nunito', 'sans-serif'],
+        // Shared with the portfolio: Poppins headings/buttons, Outfit body text.
+        // Fredoka One is kept only for the FLAG EXPLORER wordmark.
+        heading: ['Poppins', 'system-ui', 'sans-serif'],
+        body:    ['Outfit', 'system-ui', 'sans-serif'],
+        logo:    ['"Fredoka One"', 'cursive'],
       },
       colors: {
-        // ── Carnival palette ──────────────────────────────────────────────
-        'c-green':  '#4A9B7F',   // sage/forest green — welcome bg
-        'c-navy':   '#1B3A6B',   // deep navy blue — game bg / text on light
-        'c-coral':  '#E8635A',   // warm coral — results bg
-        'c-sky':    '#5BA4CF',   // sky blue
-        'c-yellow': '#F5E6A3',   // pale golden yellow
-        'c-teal':   '#2D7D6F',   // darker teal
-        'c-cream':  '#FFF8F0',   // warm cream — circle fill, text on dark
-        'c-gold':   '#F0C040',   // golden yellow accent
-        // ── Legacy dark-theme tokens (kept so any stray refs compile) ─────
-        gold:         '#D4A853',
-        navy:         '#0d1117',
-        'navy-card':  '#131929',
-        'navy-input': '#0a0f1a',
-        'navy-border':'#1e2a3a',
+        // ── Navy / teal palette (mirrors the CSS variables in index.css) ───
+        'c-navy':      '#0A4B82',   // screen backgrounds
+        'c-navy-deep': '#073861',   // text on teal fills
+        'c-ink':       '#0B2A4A',   // text on white cards
+        'c-teal':      '#2EC4A6',   // main accent
+        'c-sky':       '#7CC6F3',   // fields still to fill in
+        'c-coral':     '#E8635A',   // wrong answers
       },
       keyframes: {
         'flag-fade-in': {
@@ -41,8 +33,8 @@ export default {
           '100%': { transform: 'scale(1)',    opacity: '1' },
         },
         'btn-pulse': {
-          '0%, 100%': { boxShadow: '0 0 0 0   rgba(240,192,64,0.00)' },
-          '50%':       { boxShadow: '0 0 0 8px rgba(240,192,64,0.30)' },
+          '0%, 100%': { boxShadow: '0 0 0 0   rgba(46,196,166,0.00)' },
+          '50%':       { boxShadow: '0 0 0 8px rgba(46,196,166,0.30)' },
         },
         'hint-reveal': {
           '0%':   { transform: 'scale(0) rotate(-12deg)', opacity: '0' },

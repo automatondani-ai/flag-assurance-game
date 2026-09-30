@@ -56,8 +56,8 @@ export default function GameScreen({
   return (
     /* Screen background — decorative emojis live here, not inside the card */
     <div
-      className="phase-enter min-h-screen px-4 py-8 relative overflow-x-hidden"
-      style={{ background: 'var(--color-bg-navy)' }}
+      className="phase-enter screen px-4 py-8 relative overflow-x-hidden"
+      style={{ background: 'var(--color-navy)' }}
     >
       {/* Decorative emojis — 2 on mobile, more on larger screens */}
       <span className="pointer-events-none select-none"
@@ -80,16 +80,16 @@ export default function GameScreen({
       {/* ── Top bar ─────────────────────────────────────────────────── */}
       <div className="relative z-10 w-full max-w-5xl mx-auto mb-6">
         <div className="flex items-center gap-3 mb-3">
-          <div className="h-px flex-1" style={{ background: 'rgba(240,192,64,0.25)' }} />
-          <span className="font-fredoka text-sm tracking-widest uppercase" style={{ color: 'rgba(255,248,240,0.4)' }}>
+          <div className="h-px flex-1" style={{ background: 'rgba(46,196,166,0.25)' }} />
+          <span className="font-heading text-sm tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Flag Explorer
           </span>
-          <div className="h-px flex-1" style={{ background: 'rgba(240,192,64,0.25)' }} />
+          <div className="h-px flex-1" style={{ background: 'rgba(46,196,166,0.25)' }} />
         </div>
         <div className="relative h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-            style={{ width: `${progressPct}%`, background: 'var(--color-gold)' }}
+            style={{ width: `${progressPct}%`, background: 'var(--color-teal)' }}
           />
         </div>
       </div>
@@ -101,28 +101,28 @@ export default function GameScreen({
           style={{ background: 'rgba(255,255,255,0.10)' }}
         >
           <div>
-            <div className="font-nunito text-xs uppercase tracking-widest" style={{ color: 'rgba(255,248,240,0.6)' }}>
+            <div className="font-body text-xs uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.6)' }}>
               COMMANDER
             </div>
-            <div className="font-fredoka text-lg truncate" style={{ color: 'var(--color-cream)', maxWidth: '120px' }}>
+            <div className="font-heading text-lg truncate" style={{ color: 'var(--color-paper)', maxWidth: '120px' }}>
               {state.playerName}
             </div>
           </div>
           <div className="text-center">
             <div
-              className="font-fredoka text-2xl tabular-nums"
-              style={{ color: state.score >= 0 ? 'var(--color-gold)' : '#f87171' }}
+              className="font-heading text-2xl tabular-nums"
+              style={{ color: state.score >= 0 ? 'var(--color-teal)' : '#f87171' }}
             >
               {state.score >= 0 ? '+' : ''}{state.score}
             </div>
-            <div className="font-nunito text-xs" style={{ color: 'rgba(255,248,240,0.6)' }}>
+            <div className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
               Round {round} of {state.totalQuestions}
             </div>
           </div>
           <button
             onClick={() => setShowRestartModal(true)}
-            className="font-fredoka text-sm rounded-full px-3 py-1 border"
-            style={{ borderColor: 'rgba(255,248,240,0.30)', color: 'rgba(255,248,240,0.70)', background: 'transparent', cursor: 'pointer' }}
+            className="font-heading text-sm rounded-full px-3 py-1 border"
+            style={{ borderColor: 'rgba(255,255,255,0.30)', color: 'rgba(255,255,255,0.70)', background: 'transparent', cursor: 'pointer' }}
           >
             ↺
           </button>
@@ -171,7 +171,7 @@ export default function GameScreen({
             }}>
               {/* Hearts row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <span style={{ fontSize: '11px', color: '#888', marginRight: '6px', fontFamily: 'Nunito' }}>
+                <span style={{ fontSize: '11px', color: '#888', marginRight: '6px', fontFamily: 'Outfit' }}>
                   HINTS
                 </span>
                 {Array.from({ length: 7 }, (_, i) => (
@@ -195,7 +195,7 @@ export default function GameScreen({
                 <button
                   onClick={onHint}
                   disabled={state.totalHintsRemaining === 0}
-                  className="btn-outlined-gold"
+                  className="btn-outlined-teal"
                   style={{ fontSize: '13px', padding: '6px 16px' }}
                 >
                   💡 Hint
@@ -213,15 +213,15 @@ export default function GameScreen({
             {/* FEEDBACK — shows briefly after submit */}
             {isFeedbackVisible && (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Fredoka One', fontSize: '16px' }}>
+                <div style={{ fontFamily: 'Poppins', fontWeight: 600, fontSize: '16px' }}>
                   {state.lastCorrect
-                    ? <span style={{ color: '#4ade80' }}>
+                    ? <span style={{ color: 'var(--color-teal-ink)' }}>
                         {state.lastResolvedName !== null &&
                          state.lastResolvedName.toLowerCase() !== input.trim().toLowerCase()
                           ? `✓ Correct! (matched: ${state.lastResolvedName})`
                           : '✓ Correct, Good Job!'}
                       </span>
-                    : <span style={{ color: '#E8635A' }}>
+                    : <span style={{ color: 'var(--color-coral-ink)' }}>
                         ✗ Wrong — it was {currentCountry.name}
                       </span>
                   }
@@ -231,9 +231,9 @@ export default function GameScreen({
                     key={`delta-${state.currentIndex}`}
                     className="animate-delta-pop"
                     style={{
-                      fontFamily: 'Fredoka One',
+                      fontFamily: 'Poppins', fontWeight: 600,
                       fontSize: '24px',
-                      color: state.lastDelta >= 0 ? 'var(--color-gold)' : '#f87171',
+                      color: state.lastDelta >= 0 ? 'var(--color-teal-ink)' : 'var(--color-coral-ink)',
                       marginTop: '4px',
                     }}
                   >
@@ -252,7 +252,7 @@ export default function GameScreen({
               onClick={handleSubmit}
               disabled={!canSubmit}
               className={[
-                'btn-gold w-full py-5 lg:py-4 text-xl uppercase tracking-wide',
+                'btn-primary w-full py-5 lg:py-4 text-xl uppercase tracking-wide',
                 canSubmit ? 'animate-btn-pulse' : '',
               ].join(' ')}
               style={{ opacity: canSubmit ? 1 : 0.4, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
@@ -263,7 +263,7 @@ export default function GameScreen({
         </div>
 
         {/* ── RIGHT PANEL — score sidebar (desktop only) ───────────── */}
-        <div className="hidden lg:block lg:sticky lg:top-6 self-start">
+        <div className="hidden lg:block lg:sticky lg:top-[76px] self-start">
           <div
             className="rounded-2xl p-6 space-y-4"
             style={{
@@ -272,10 +272,10 @@ export default function GameScreen({
             }}
           >
             <div>
-              <p className="font-nunito text-xs uppercase tracking-widest mb-0.5" style={{ color: 'rgba(255,248,240,0.38)' }}>
+              <p className="font-body text-xs uppercase tracking-widest mb-0.5" style={{ color: 'rgba(255,255,255,0.38)' }}>
                 Commander
               </p>
-              <p className="font-fredoka text-xl truncate" style={{ color: 'var(--color-cream)' }}>
+              <p className="font-heading text-xl truncate" style={{ color: 'var(--color-paper)' }}>
                 {state.playerName}
               </p>
             </div>
@@ -283,10 +283,10 @@ export default function GameScreen({
             <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
             <div>
-              <p className="font-fredoka text-sm uppercase" style={{ color: 'rgba(255,248,240,0.45)' }}>Score</p>
+              <p className="font-heading text-sm uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>Score</p>
               <p
-                className="font-fredoka tabular-nums leading-none"
-                style={{ fontSize: '3.25rem', color: state.score >= 0 ? 'var(--color-gold)' : '#f87171' }}
+                className="font-heading tabular-nums leading-none"
+                style={{ fontSize: '3.25rem', color: state.score >= 0 ? 'var(--color-teal)' : '#f87171' }}
               >
                 {state.score >= 0 ? '+' : ''}{state.score}
               </p>
@@ -295,30 +295,30 @@ export default function GameScreen({
             <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
             <div>
-              <p className="font-nunito text-sm" style={{ color: 'rgba(255,248,240,0.6)' }}>
+              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
                 Round{' '}
-                <span className="font-nunito font-bold" style={{ color: 'var(--color-cream)' }}>{round}</span>
+                <span className="font-body font-bold" style={{ color: 'var(--color-paper)' }}>{round}</span>
                 {' '}of {state.totalQuestions}
               </p>
               <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
                 <div
                   className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progressPct}%`, background: 'var(--color-gold)' }}
+                  style={{ width: `${progressPct}%`, background: 'var(--color-teal)' }}
                 />
               </div>
             </div>
 
             <button
               onClick={() => setShowRestartModal(true)}
-              className="w-full font-fredoka text-sm py-2 px-4 rounded-full border-2 transition-colors duration-150"
-              style={{ borderColor: 'var(--color-cream)', color: 'var(--color-cream)', background: 'transparent', cursor: 'pointer' }}
+              className="w-full font-heading text-sm py-2 px-4 rounded-full border-2 transition-colors duration-150"
+              style={{ borderColor: 'var(--color-paper)', color: 'var(--color-paper)', background: 'transparent', cursor: 'pointer' }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-cream)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-navy-text)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-paper)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-ink)';
               }}
               onMouseLeave={e => {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-cream)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-paper)';
               }}
             >
               ↺ Restart
@@ -329,7 +329,7 @@ export default function GameScreen({
               <span>🧭</span>
             </div>
 
-            <p className="font-nunito text-xs leading-relaxed" style={{ color: 'rgba(255,248,240,0.28)' }}>
+            <p className="font-body text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
               Higher confidence = higher reward or penalty. Score can go negative.
             </p>
           </div>
@@ -340,39 +340,39 @@ export default function GameScreen({
       {/* ── Restart confirmation modal ──────────────────────────────── */}
       {showRestartModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-[1100] flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={() => setShowRestartModal(false)}
         >
           <div
             className="rounded-2xl p-6 shadow-xl mx-4"
-            style={{ background: 'var(--color-cream)', maxWidth: '320px', width: '100%' }}
+            style={{ background: 'var(--color-paper)', maxWidth: '320px', width: '100%' }}
             onClick={e => e.stopPropagation()}
           >
             <h2
-              className="font-fredoka text-xl mb-2"
-              style={{ color: 'var(--color-navy-text)' }}
+              className="font-heading text-xl mb-2"
+              style={{ color: 'var(--color-ink)' }}
             >
               Restart Game?
             </h2>
             <p
-              className="font-nunito text-sm mb-6"
-              style={{ color: 'rgba(27,58,107,0.7)' }}
+              className="font-body text-sm mb-6"
+              style={{ color: 'rgba(11,42,74,0.7)' }}
             >
               Your current progress will be lost.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowRestartModal(false)}
-                className="flex-1 font-fredoka py-2 rounded-full border-2 transition-colors duration-150"
-                style={{ borderColor: 'var(--color-navy-text)', color: 'var(--color-navy-text)', background: 'transparent' }}
+                className="flex-1 font-heading py-2 rounded-full border-2 transition-colors duration-150"
+                style={{ borderColor: 'var(--color-ink)', color: 'var(--color-ink)', background: 'transparent' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmRestart}
-                className="flex-1 font-fredoka py-2 rounded-full border-none transition-colors duration-150"
-                style={{ background: 'var(--color-gold)', color: 'var(--color-navy-text)', cursor: 'pointer' }}
+                className="flex-1 font-heading py-2 rounded-full border-none transition-colors duration-150"
+                style={{ background: 'var(--color-teal)', color: 'var(--color-ink)', cursor: 'pointer' }}
               >
                 Restart 🔄
               </button>

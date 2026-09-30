@@ -17,11 +17,11 @@ interface ResultsScreenProps {
 function LeaderboardSkeleton() {
   return (
     <div className="space-y-3 py-2">
-      <p className="font-nunito text-sm text-center" style={{ color: 'rgba(27,58,107,0.4)' }}>
+      <p className="font-body text-sm text-center" style={{ color: 'rgba(11,42,74,0.4)' }}>
         Loading scores...
       </p>
       {[0, 1, 2].map(i => (
-        <div key={i} className="h-4 rounded-full animate-pulse" style={{ background: 'rgba(27,58,107,0.12)' }} />
+        <div key={i} className="h-4 rounded-full animate-pulse" style={{ background: 'rgba(11,42,74,0.12)' }} />
       ))}
     </div>
   );
@@ -84,8 +84,8 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
   return (
     /* Screen background — decorative emojis live here */
     <div
-      className="phase-enter min-h-screen px-4 py-10 relative overflow-x-hidden"
-      style={{ background: 'var(--color-bg-coral)' }}
+      className="phase-enter screen px-4 py-10 relative overflow-x-hidden"
+      style={{ background: 'var(--color-navy)' }}
     >
       {/* Decorative emojis — 2 on mobile, more on larger screens */}
       <span className="pointer-events-none select-none"
@@ -130,16 +130,16 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
               </div>
 
               {/* Player name */}
-              <p className="font-fredoka text-2xl" style={{ color: 'var(--color-navy-text)' }}>
+              <p className="font-heading text-2xl" style={{ color: 'var(--color-ink)' }}>
                 {state.playerName}
               </p>
 
               {/* Animated score */}
               <p
-                className="font-fredoka tabular-nums leading-none"
+                className="font-heading tabular-nums leading-none"
                 style={{
                   fontSize: '4.5rem',
-                  color: isPositive ? '#d97706' : 'var(--color-bg-coral)',
+                  color: isPositive ? 'var(--color-teal-ink)' : 'var(--color-coral-ink)',
                   lineHeight: 1,
                 }}
               >
@@ -148,24 +148,24 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
 
               {/* Accuracy bar + percentage */}
               <div style={{ width: '100%', maxWidth: '260px' }}>
-                <p className="font-fredoka text-xl mb-1" style={{ color: 'rgba(27,58,107,0.65)' }}>
+                <p className="font-heading text-xl mb-1" style={{ color: 'rgba(11,42,74,0.65)' }}>
                   {percentage}% accuracy
                 </p>
                 <div
                   className="h-2 rounded-full overflow-hidden"
-                  style={{ background: 'rgba(27,58,107,0.12)' }}
+                  style={{ background: 'rgba(11,42,74,0.12)' }}
                 >
                   <div
                     className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${Math.max(0, percentage)}%`, background: 'var(--color-gold)' }}
+                    style={{ width: `${Math.max(0, percentage)}%`, background: 'var(--color-teal)' }}
                   />
                 </div>
               </div>
 
               {/* Tier message */}
               <p
-                className="font-nunito font-bold text-base italic text-center"
-                style={{ color: 'rgba(27,58,107,0.7)', maxWidth: '280px' }}
+                className="font-body font-bold text-base italic text-center"
+                style={{ color: 'rgba(11,42,74,0.7)', maxWidth: '280px' }}
               >
                 "{message}"
               </p>
@@ -177,19 +177,19 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
               style={{ maxWidth: '520px' }}
             >
               {[
-                { label: 'Rounds',    value: String(state.totalQuestions),  accent: 'var(--color-cream)' },
-                { label: 'Correct',   value: String(state.correctCount),    accent: '#6ee7b7' },
-                { label: 'Per Round', value: state.totalQuestions > 0 ? (state.score / state.totalQuestions).toFixed(1) : '0.0', accent: isPositive ? 'var(--color-cream)' : '#fca5a5' },
+                { label: 'Rounds',    value: String(state.totalQuestions),  accent: 'var(--color-paper)' },
+                { label: 'Correct',   value: String(state.correctCount),    accent: 'var(--color-teal)' },
+                { label: 'Per Round', value: state.totalQuestions > 0 ? (state.score / state.totalQuestions).toFixed(1) : '0.0', accent: isPositive ? 'var(--color-paper)' : '#fca5a5' },
               ].map(({ label, value, accent }) => (
                 <div
                   key={label}
                   className="rounded-2xl p-4 text-center"
-                  style={{ background: 'rgba(255,255,255,0.18)' }}
+                  style={{ background: 'rgba(255,255,255,0.08)' }}
                 >
-                  <p className="font-nunito text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(255,248,240,0.55)' }}>
+                  <p className="font-body text-xs uppercase tracking-wide mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
                     {label}
                   </p>
-                  <p className="font-fredoka text-2xl" style={{ color: accent }}>
+                  <p className="font-heading text-2xl" style={{ color: accent }}>
                     {value}
                   </p>
                 </div>
@@ -199,18 +199,18 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
             {/* Missed countries */}
             <div
               className="rounded-3xl overflow-hidden mx-auto"
-              style={{ maxWidth: '520px', background: 'rgba(255,255,255,0.18)' }}
+              style={{ maxWidth: '520px', background: 'rgba(255,255,255,0.08)' }}
             >
               <button
                 onClick={() => setShowMissed(v => !v)}
                 className="w-full flex items-center justify-between px-6 py-4"
-                style={{ color: 'var(--color-cream)', cursor: 'pointer' }}
+                style={{ color: 'var(--color-paper)', cursor: 'pointer' }}
               >
-                <span className="font-fredoka text-base">
+                <span className="font-heading text-base">
                   Countries You Missed ({state.missedCountries.length})
                 </span>
                 <span
-                  className="font-fredoka text-lg transition-transform duration-200 inline-block"
+                  className="font-heading text-lg transition-transform duration-200 inline-block"
                   style={{ transform: showMissed ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 >
                   ▼
@@ -221,8 +221,8 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
                 <div className="px-6 pb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}>
                   {state.missedCountries.length === 0 ? (
                     <p
-                      className="font-fredoka text-xl text-center py-4"
-                      style={{ color: 'var(--color-gold)' }}
+                      className="font-heading text-xl text-center py-4"
+                      style={{ color: 'var(--color-teal)' }}
                     >
                       🎉 Perfect Score! No flags missed.
                     </p>
@@ -232,7 +232,7 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
                         <div
                           key={country.code}
                           className="rounded-2xl overflow-hidden"
-                          style={{ background: 'var(--color-cream)' }}
+                          style={{ background: 'var(--color-paper)' }}
                         >
                           <div className="bg-white flex items-center justify-center h-12 p-1">
                             <img
@@ -243,8 +243,8 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
                           </div>
                           <div className="p-2">
                             <p
-                              className="font-fredoka text-sm leading-snug"
-                              style={{ color: 'var(--color-navy-text)' }}
+                              className="font-heading text-sm leading-snug"
+                              style={{ color: 'var(--color-ink)' }}
                             >
                               {country.name}
                             </p>
@@ -252,8 +252,8 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
                               href={wikiUrl(country.name)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-nunito text-xs"
-                              style={{ color: 'var(--color-gold)' }}
+                              className="font-body text-xs"
+                              style={{ color: 'var(--color-teal-ink)' }}
                             >
                               Learn more →
                             </a>
@@ -269,7 +269,7 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
             {/* Start Again */}
             <button
               onClick={onReset}
-              className="btn-navy w-full py-4 text-xl uppercase tracking-wide block mx-auto"
+              className="btn-primary w-full py-4 text-xl uppercase tracking-wide block mx-auto"
               style={{ maxWidth: '520px' }}
             >
               Start Again
@@ -277,8 +277,8 @@ export default function ResultsScreen({ state, onReset }: ResultsScreenProps) {
           </div>
 
           {/* ── RIGHT COLUMN — global leaderboard ───────────────────── */}
-          <div className="lg:sticky lg:top-6 self-start">
-            <p className="font-fredoka text-xl mb-3" style={{ color: 'var(--color-cream)' }}>
+          <div className="lg:sticky lg:top-[76px] self-start">
+            <p className="font-heading text-xl mb-3" style={{ color: 'var(--color-paper)' }}>
               🏆 GLOBAL TOP 10
             </p>
             {/* card-stage; overflow:visible so table rows never clip */}

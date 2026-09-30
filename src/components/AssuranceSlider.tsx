@@ -50,12 +50,12 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
     <div className="w-full select-none">
       {/* Label + value */}
       <div className="flex items-baseline justify-between mb-3">
-        <span className="font-fredoka text-base uppercase tracking-wide" style={{ color: 'rgba(255,248,240,0.7)' }}>
+        <span className="font-heading text-base uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.7)' }}>
           Confidence Level
         </span>
         <span
-          className="font-fredoka text-2xl tabular-nums transition-colors duration-150"
-          style={{ color: value === 0 ? 'rgba(255,248,240,0.25)' : 'var(--color-gold)' }}
+          className="font-heading text-2xl tabular-nums transition-colors duration-150"
+          style={{ color: value === 0 ? 'rgba(255,255,255,0.25)' : 'var(--color-teal)' }}
         >
           {value}<span className="text-lg ml-0.5">%</span>
         </span>
@@ -70,10 +70,10 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
         className="relative h-4 rounded-full cursor-pointer"
         style={{ background: 'rgba(255,255,255,0.12)', touchAction: 'none' }}
       >
-        {/* Gold fill */}
+        {/* Teal fill */}
         <div
           className="absolute inset-y-0 left-0 rounded-full pointer-events-none"
-          style={{ width: `${value}%`, background: 'var(--color-gold)' }}
+          style={{ width: `${value}%`, background: 'var(--color-teal)' }}
         />
 
         {/* Knob — pointer-events: none so track handles all events */}
@@ -88,7 +88,7 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
             left: `${value}%`,
             width: 'clamp(28px, 5vw, 36px)',
             height: 'clamp(28px, 5vw, 36px)',
-            background: 'var(--color-gold)',
+            background: 'var(--color-teal)',
             border: '3px solid white',
             boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
@@ -100,8 +100,8 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
         {[0, 25, 50, 75, 100].map(tick => (
           <span
             key={tick}
-            className="font-nunito text-[10px] tabular-nums transition-colors duration-150"
-            style={{ color: value >= tick && tick > 0 ? 'rgba(240,192,64,0.7)' : 'rgba(255,248,240,0.25)' }}
+            className="font-body text-[10px] tabular-nums transition-colors duration-150"
+            style={{ color: value >= tick && tick > 0 ? 'rgba(46,196,166,0.7)' : 'rgba(255,255,255,0.25)' }}
           >
             {tick}
           </span>
@@ -110,7 +110,7 @@ export default function AssuranceSlider({ value, onChange }: AssuranceSliderProp
 
       {/* Zero-confidence hint */}
       {value === 0 && (
-        <p className="font-nunito text-xs mt-1 leading-snug" style={{ color: 'rgba(255,248,240,0.35)' }}>
+        <p className="font-body text-xs mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.35)' }}>
           0 = not confident (no points risked)
         </p>
       )}
