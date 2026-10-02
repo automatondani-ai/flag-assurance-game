@@ -8,7 +8,7 @@ function wikiUrl(name: string) {
   return `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
 }
 
-const KOFI_URL = 'https://ko-fi.com/damilolaoyetayo';
+const KOFI_URL = 'https://ko-fi.com/adeolu';
 
 function CupIcon() {
   return (
