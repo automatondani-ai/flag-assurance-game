@@ -209,9 +209,18 @@ export interface UseGameStateReturn {
   skipQuestion: () => void;
   restartGame: (continents: Continent[], length: number) => void;
   resetGame: () => void;
+  /** Stop the game clock (the how-to-play tour is open). */
+  pauseClock: () => void;
+  /** Restart the clock; the paused time never counts towards the game's duration. */
+  resumeClock: () => void;
 }
 
 const ALL_CONTINENT_COUNT = 5;
+
+/** Whole seconds played since `startedAt`, leaving out a pause still in progress. */
+function elapsedSeconds(startedAt: number, pausedAt: number | null): number {
+  return Math.floor(((pausedAt ?? Date.now()) - startedAt) / 1000);
+}
 
 export default function useGameState(): UseGameStateReturn {
   const [reducerState, dispatch] = useReducer(reducer, INITIAL);
@@ -226,6 +235,20 @@ export default function useGameState(): UseGameStateReturn {
 
   // Records when the current game started, for computing duration on END.
   const startTimeRef = useRef<number>(0);
+
+  // Non-null while the clock is paused: when the pause started.
+  const pausedAtRef = useRef<number | null>(null);
+
+  const pauseClock = useCallback(() => {
+    if (pausedAtRef.current === null) pausedAtRef.current = Date.now();
+  }, []);
+
+  // Shift the start time forward by the paused span, so durations exclude it.
+  const resumeClock = useCallback(() => {
+    if (pausedAtRef.current === null) return;
+    startTimeRef.current += Date.now() - pausedAtRef.current;
+    pausedAtRef.current = null;
+  }, []);
 
   const startGame = useCallback(
     (playerName: string, continents: Continent[], length: number) => {
@@ -255,6 +278,7 @@ export default function useGameState(): UseGameStateReturn {
 
       const region = continents.length >= ALL_CONTINENT_COUNT ? 'World' : continents.join(', ');
       startTimeRef.current = Date.now();
+      pausedAtRef.current = null;
       dispatch({ type: 'START', playerName: playerName.trim(), queue, region, gameLength: queue.length });
     },
     [],
@@ -286,7 +310,7 @@ export default function useGameState(): UseGameStateReturn {
       timerRef.current = null;
       const isLast = currentIndex >= queue.length - 1;
       if (isLast) {
-        const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        const duration = elapsedSeconds(startTimeRef.current, pausedAtRef.current);
         dispatch({ type: 'END', duration });
       } else {
         dispatch({ type: 'ADVANCE_ROUND' });
@@ -300,7 +324,7 @@ export default function useGameState(): UseGameStateReturn {
 
   const skipQuestion = useCallback(() => {
     if (timerRef.current) return;
-    const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    const duration = elapsedSeconds(startTimeRef.current, pausedAtRef.current);
     dispatch({ type: 'SKIP_QUESTION', duration });
   }, []);
 
@@ -329,6 +353,7 @@ export default function useGameState(): UseGameStateReturn {
       const queue = doubleShuffleArray(premixed).slice(0, Math.min(length, premixed.length));
       const region = continents.length >= ALL_CONTINENT_COUNT ? 'World' : continents.join(', ');
       startTimeRef.current = Date.now();
+      pausedAtRef.current = null;
       dispatch({ type: 'START', playerName, queue, region, gameLength: queue.length });
     },
     [],
@@ -343,5 +368,8 @@ export default function useGameState(): UseGameStateReturn {
   }, []);
 
   const { queue, ...gameState } = reducerState;
-  return { state: gameState, queue, startGame, submitAnswer, useHint, skipQuestion, restartGame, resetGame };
+  return {
+    state: gameState, queue, startGame, submitAnswer, useHint, skipQuestion, restartGame, resetGame,
+    pauseClock, resumeClock,
+  };
 }

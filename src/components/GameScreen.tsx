@@ -1,7 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { GameState, Country, Continent } from '../types';
 import AssuranceSlider from './AssuranceSlider';
 import HintDisplay from './HintDisplay';
+import HowToPlayTour from './HowToPlayTour';
+import { tourSeen } from '../utils/tour';
+
+// Lets the screen's entrance animation (400 ms) finish before the tour measures it.
+const TOUR_DELAY_MS = 500;
 
 interface GameScreenProps {
   state: GameState;
@@ -10,6 +15,8 @@ interface GameScreenProps {
   onHint: () => void;
   onSkip: () => void;
   onRestart: (continents: Continent[], length: number) => void;
+  onPauseClock: () => void;
+  onResumeClock: () => void;
   gameContinents: Continent[];
   gameLength: number;
 }
@@ -21,12 +28,15 @@ export default function GameScreen({
   onHint,
   onSkip,
   onRestart,
+  onPauseClock,
+  onResumeClock,
   gameContinents,
   gameLength,
 }: GameScreenProps) {
   const [input, setInput] = useState('');
   const [assurance, setAssurance] = useState(0);
   const [showRestartModal, setShowRestartModal] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -34,6 +44,29 @@ export default function GameScreen({
     setAssurance(0);
     inputRef.current?.focus();
   }, [state.currentIndex]);
+
+  // A player's first game in this browser: show the how-to-play tour on the first
+  // flag. The clock is paused from now until the tour closes.
+  useEffect(() => {
+    if (tourSeen()) return;
+    onPauseClock();
+    const t = window.setTimeout(() => setTourOpen(true), TOUR_DELAY_MS);
+    return () => {
+      window.clearTimeout(t);
+      onResumeClock();
+    };
+  }, [onPauseClock, onResumeClock]);
+
+  function openTour() {
+    onPauseClock();
+    setTourOpen(true);
+  }
+
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    onResumeClock();
+    inputRef.current?.focus();
+  }, [onResumeClock]);
 
   const isFeedbackVisible = state.lastCorrect !== null;
   const canSubmit = input.trim().length > 0 && !isFeedbackVisible;
@@ -108,7 +141,7 @@ export default function GameScreen({
               {state.playerName}
             </div>
           </div>
-          <div className="text-center">
+          <div className="text-center" data-tour="score">
             <div
               className="font-heading text-2xl tabular-nums"
               style={{ color: state.score >= 0 ? 'var(--color-teal)' : '#f87171' }}
@@ -119,13 +152,25 @@ export default function GameScreen({
               Round {round} of {state.totalQuestions}
             </div>
           </div>
-          <button
-            onClick={() => setShowRestartModal(true)}
-            className="font-heading text-sm rounded-full px-3 py-1 border"
-            style={{ borderColor: 'rgba(255,255,255,0.30)', color: 'rgba(255,255,255,0.70)', background: 'transparent', cursor: 'pointer' }}
-          >
-            ↺
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openTour}
+              aria-label="How to play"
+              title="How to play"
+              className="font-heading text-sm rounded-full px-3 py-1 border"
+              style={{ borderColor: 'rgba(255,255,255,0.30)', color: 'rgba(255,255,255,0.70)', background: 'transparent', cursor: 'pointer' }}
+            >
+              ?
+            </button>
+            <button
+              onClick={() => setShowRestartModal(true)}
+              aria-label="Restart"
+              className="font-heading text-sm rounded-full px-3 py-1 border"
+              style={{ borderColor: 'rgba(255,255,255,0.30)', color: 'rgba(255,255,255,0.70)', background: 'transparent', cursor: 'pointer' }}
+            >
+              ↺
+            </button>
+          </div>
         </div>
       </div>
 
@@ -158,11 +203,12 @@ export default function GameScreen({
               placeholder="Country name..."
               maxLength={45}
               className="pill-input"
+              data-tour="answer"
               style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', opacity: isFeedbackVisible ? 0.5 : 1 }}
             />
 
             {/* HEARTS + BUTTONS ROW */}
-            <div style={{
+            <div data-tour="hints" style={{
               width: '100%',
               display: 'flex',
               flexDirection: 'column',
@@ -246,7 +292,9 @@ export default function GameScreen({
 
           {/* ── Below-card controls ───────────────────────────────── */}
           <div className="mt-6 mx-auto space-y-4" style={{ maxWidth: '520px' }}>
-            <AssuranceSlider value={assurance} onChange={setAssurance} />
+            <div data-tour="confidence">
+              <AssuranceSlider value={assurance} onChange={setAssurance} />
+            </div>
 
             <button
               onClick={handleSubmit}
@@ -282,7 +330,7 @@ export default function GameScreen({
 
             <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
-            <div>
+            <div data-tour="score">
               <p className="font-heading text-sm uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>Score</p>
               <p
                 className="font-heading tabular-nums leading-none"
@@ -324,6 +372,10 @@ export default function GameScreen({
               ↺ Restart
             </button>
 
+            <button onClick={openTour} className="btn-how-to-play w-full">
+              How to play
+            </button>
+
             <div className="flex justify-between text-xl" style={{ opacity: 0.18 }}>
               <span>🗺️</span>
               <span>🧭</span>
@@ -336,6 +388,11 @@ export default function GameScreen({
         </div>
 
       </div>
+
+      {/* ── How to play tour ─────────────────────────────────────────── */}
+      {tourOpen && (
+        <HowToPlayTour onClose={closeTour} currentCountryCode={currentCountry.code} />
+      )}
 
       {/* ── Restart confirmation modal ──────────────────────────────── */}
       {showRestartModal && (

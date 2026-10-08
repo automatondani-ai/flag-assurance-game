@@ -61,6 +61,14 @@ Every answered or skipped question is accumulated into `state.answers` as a `Gam
 
 `HintHearts.tsx` exists but is **not used** — `GameScreen.tsx` inlines its own SVG hearts directly.
 
+### How to play tour (`HowToPlayTour.tsx`)
+
+- **When it opens:** `GameScreen` opens it on the first flag of a player's first game in a browser. The `flag_explorer_tour_seen` key in localStorage (`src/utils/tour.ts`) records that. It also opens from the How to play buttons: the sidebar link, and `?` in the phone top bar.
+- **The four steps:** each one rings a live control found by its `data-tour` attribute: `answer`, `confidence`, `hints` and `score`. `score` exists twice, in the phone bar and in the sidebar, and the tour uses whichever is visible. If you move or rename those elements, keep the attributes.
+- **The game clock:** it is paused while the tour is open (`pauseClock` / `resumeClock` in `useGameState`), so tour time never counts towards the leaderboard TIME.
+- **Rendering:** the tour is portalled to `<body>`. `.phase-enter` leaves a transform on the screen, which would otherwise make `position: fixed` relative to the screen and offset the ring by the site bar's 52px.
+- **The spelling examples** (Nigeria / Nigria / Niger, or Brazil when the flag is Nigeria or Niger) were checked against both answer checks. If you change the matching rules, re-check them.
+
 ## Leaderboard API (`api/leaderboard.ts`)
 
 - Redis sorted set key: `flag:leaderboard` (top 1000 kept)

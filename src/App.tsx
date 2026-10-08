@@ -6,7 +6,10 @@ import GameScreen from './components/GameScreen';
 import ResultsScreen from './components/ResultsScreen';
 
 export default function App() {
-  const { state, queue, startGame, submitAnswer, useHint, skipQuestion, restartGame, resetGame } = useGameState();
+  const {
+    state, queue, startGame, submitAnswer, useHint, skipQuestion, restartGame, resetGame,
+    pauseClock, resumeClock,
+  } = useGameState();
 
   // Remember the last-used settings so GameScreen can restart with the same params
   const [lastContinents, setLastContinents] = useState<Continent[]>([]);
@@ -33,6 +36,8 @@ export default function App() {
         onHint={useHint}
         onSkip={skipQuestion}
         onRestart={restartGame}
+        onPauseClock={pauseClock}
+        onResumeClock={resumeClock}
         gameContinents={lastContinents}
         gameLength={lastGameLength}
       />

@@ -232,3 +232,155 @@ input[type='range']::-moz-range-track {
   /* 16px prevents iOS auto-zoom on input focus */
   input  { min-height: 48px; font-size: 16px; }
 }
+
+/* ── How to play tour (HowToPlayTour.tsx) ────────────────────────────────── */
+.flag-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;              /* above the sticky site bar (1000) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(4, 20, 38, 0.62);
+  animation: flag-tour-fade 200ms ease;
+}
+.flag-tour[data-mode="step"] { background: transparent; }
+
+@keyframes flag-tour-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* The 9999px box-shadow dims everything outside the ring */
+.flag-tour-ring {
+  position: fixed;
+  border: 2px solid var(--color-teal);
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(4, 20, 38, 0.62);
+  pointer-events: none;
+  transition: top 300ms cubic-bezier(0.4, 0, 0.2, 1), left 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flag-tour-card {
+  position: relative;
+  width: min(340px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  animation: flag-tour-pop 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.flag-tour-card[data-placed="false"] { visibility: hidden; }
+
+@keyframes flag-tour-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.flag-tour-icon { align-self: flex-start; color: var(--color-ink); }
+.flag-tour-icon[data-accent="true"] { color: var(--color-teal-ink); }
+
+.flag-tour-heading {
+  margin: 0;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+.flag-tour-body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(11, 42, 74, 0.75);
+}
+.flag-tour-badge {
+  align-self: flex-start;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-teal-ink);
+}
+
+.flag-tour-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.flag-tour-chip {
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  padding: 3px 11px;
+  color: var(--color-teal-ink);
+  background: rgba(46, 196, 166, 0.16);
+}
+.flag-tour-chip[data-ok="false"] { color: var(--color-coral-ink); background: rgba(232, 99, 90, 0.14); }
+
+.flag-tour-demo { border-radius: 12px; padding: 10px 14px 12px; background: rgba(11, 42, 74, 0.05); }
+.flag-tour-demo-label { display: block; font-size: 0.8rem; color: rgba(11, 42, 74, 0.6); margin-bottom: 4px; }
+.flag-tour-demo-result {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.flag-tour-demo-result [data-ok="true"]  { color: var(--color-teal-ink); }
+.flag-tour-demo-result [data-ok="false"] { color: var(--color-coral-ink); }
+
+/* The global range styles leave the track transparent; this one draws its own.
+   input.class matches the specificity of input[type='range'] and comes later. */
+input.flag-tour-range { display: block; height: 28px; min-height: 0; }
+input.flag-tour-range::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, var(--color-teal) var(--fill), rgba(11, 42, 74, 0.14) var(--fill));
+}
+input.flag-tour-range::-moz-range-track { background: rgba(11, 42, 74, 0.14); }
+input.flag-tour-range::-moz-range-progress { height: 12px; border-radius: 9999px; background: var(--color-teal); }
+
+.flag-tour-footer, .flag-tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+.flag-tour-nav { display: flex; gap: 8px; }
+.flag-tour-dots { display: flex; gap: 5px; }
+.flag-tour-dot { width: 7px; height: 7px; border-radius: 9999px; background: rgba(11, 42, 74, 0.18); transition: width 200ms; }
+.flag-tour-dot[data-active="true"] { width: 18px; background: var(--color-teal); }
+
+.flag-tour-btn-primary, .flag-tour-btn-secondary, .flag-tour-btn-text {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+.flag-tour-btn-primary { border: none; padding: 9px 20px; background: var(--color-teal); color: var(--color-navy-deep); }
+.flag-tour-btn-primary:hover { filter: brightness(1.06); }
+.flag-tour-btn-secondary { padding: 7px 16px; background: transparent; color: var(--color-ink); border: 2px solid rgba(11, 42, 74, 0.2); }
+.flag-tour-btn-secondary:hover { border-color: var(--color-ink); }
+.flag-tour-btn-text { padding: 8px 4px; border: none; background: transparent; color: rgba(11, 42, 74, 0.6); }
+.flag-tour-btn-text:hover { color: var(--color-ink); }
+.flag-tour button:focus-visible { outline: 3px solid var(--color-sky); outline-offset: 2px; }
+
+/* "How to play" buttons on the game screen */
+.btn-how-to-play {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.btn-how-to-play:hover { color: var(--color-paper); }
+
+@media (prefers-reduced-motion: reduce) {
+  .flag-tour, .flag-tour-card { animation: none; }
+  .flag-tour-ring, .flag-tour-dot { transition: none; }
+}
