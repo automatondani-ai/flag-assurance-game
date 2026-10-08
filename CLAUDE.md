@@ -47,13 +47,15 @@ Every answered or skipped question is accumulated into `state.answers` as a `Gam
 
 `api/` uses `moduleResolution: node16` (Vercel's TypeScript config), which **requires `.js` extensions on all relative imports** (e.g. `import { NORMALISED_COUNTRY_MAP } from './countries.js'`).
 
-### Fuzzy matching — two independent implementations
+### Answer rule — one rule, copied into client and server
 
-**Client (`src/utils/gameUtils.ts`):** Fuse.js with `threshold: 0.4` searching `name` and `aliases`. The normalised input is passed to Fuse; the best match is compared against `correctName` using `normaliseString()`.
+The screen (`checkAnswer` in `src/utils/gameUtils.ts`) and the leaderboard (`api/leaderboard.ts`) judge answers with the **same code**. It lives in the block between `── Answer rule ──` and `── End of answer rule ──`, copied word for word into both files because they can't import each other. Keep the two blocks identical; `diff` them after any change. Before October 2026 the client used Fuse.js and the server used Levenshtein, and they disagreed on hundreds of typos: "Nigeira" showed Correct but scored as wrong.
 
-**Server (`api/leaderboard.ts`):** Pure string logic — exact match → alias match → Levenshtein distance with an adaptive threshold (`≤1` for names ≤7 chars, `≤2` for longer names). Uses `NORMALISED_COUNTRY_MAP`, which pre-computes `normName` and `normAliases` at module load (NFC + lowercase).
-
-`normaliseString(s)` is defined independently in both `api/leaderboard.ts` and `src/utils/gameUtils.ts` — the two cannot share code, so they must stay identical: `s.normalize('NFC').toLowerCase()`.
+- **Normalising:** NFC, lower-case, single spaces, trimmed (`normaliseAnswer`). Empty answers and answers over 45 characters are wrong.
+- **When an answer is right:** it is within the allowed typos of the country's name or one of its aliases. That is 1 edit for spellings of up to 7 letters and 2 for longer ones. Swapping two neighbouring letters counts as one edit (optimal string alignment).
+- **Another country can't be closer:** "Iraq" is not a typo of "Iran", and "Niger" is wrong for Nigeria. Ties count as right.
+- **Part of a name on its own** ("Burkina", "South") is wrong unless it's an alias. Add common short names as aliases in **both** country lists.
+- **Keys:** the client keys countries by name; the server keys them by code via `NORMALISED_COUNTRY_MAP`.
 
 ### Hint system
 

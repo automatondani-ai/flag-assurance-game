@@ -53,18 +53,12 @@ function sanitise(s: string): string {
     .trim();
 }
 
-/** Unicode-aware normalisation: NFC + lower-case. Applied to player input before comparisons. */
-function normaliseString(s: string): string {
-  return s.normalize('NFC').toLowerCase();
-}
-
 /**
  * Leaderboard identity: the same name (ignoring case and spacing) in the same region
  * counts as one player, e.g. "crystal|africa".
  */
 function playerKey(name: string, region: string): string {
-  const norm = (s: string) => normaliseString(s).replace(/\s+/g, ' ').trim();
-  return `${norm(name)}|${norm(region)}`;
+  return `${normaliseAnswer(name)}|${normaliseAnswer(region)}`;
 }
 
 /**
@@ -82,62 +76,87 @@ function setSecurityHeaders(res: VercelResponse): void {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 }
 
+// ── Answer rule ───────────────────────────────────────────────────────────────
+// Keep this block identical in api/leaderboard.ts and src/utils/gameUtils.ts:
+// the server and client can't import each other, and the score the player sees
+// must be the score the leaderboard stores.
+
+/** A country's accepted spellings (name and aliases), normalised. */
+type AnswerForms = { key: string; forms: string[] };
+
+/** NFC, lower-case, single spaces, trimmed. */
+function normaliseAnswer(s: string): string {
+  return s.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/** Most typos allowed: 1 for names of up to 7 letters, 2 for longer ones. */
+function allowedEdits(length: number): number {
+  return length <= 7 ? 1 : 2;
+}
+
 /**
- * Classic Levenshtein edit-distance (DP, O(m*n)).
- * Used for server-side answer verification — no external dependencies needed.
+ * Edit distance where swapping two neighbouring letters counts as one edit
+ * (optimal string alignment), so "nigeira" is one typo away from "nigeria".
  */
-function levenshtein(a: string, b: string): number {
-  const dp = Array.from({ length: a.length + 1 }, (_, i) =>
+function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) =>
     Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
   );
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
-      dp[i][j] =
-        a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
     }
   }
-  return dp[a.length][b.length];
+  return d[a.length][b.length];
 }
 
 /**
- * Adaptive Levenshtein threshold:
- * Short names (≤7 chars) use a tighter tolerance of 1 edit.
- * Longer names allow 2 edits to cover common multi-character typos.
+ * Right when the answer is within the allowed typos of one of the target's
+ * spellings and no other country's spelling is closer ("Iraq" is not a typo of
+ * "Iran"). Ties count as right. Also returns the closest country's key.
  */
-function getLevenshteinThreshold(nameLength: number): number {
-  return nameLength <= 7 ? 1 : 2;
-}
-
-/**
- * Server-side answer check.
- * Expects pre-normalised (NFC + lowercase) `normName` and `normAliases`
- * from NORMALISED_COUNTRY_MAP. Only the player's raw `input` is normalised here.
- *
- * 1. Exact match against normalised correct name
- * 2. Exact match against any normalised alias
- * 3. Levenshtein ≤ adaptive threshold against correct name
- *
- * Input length is capped at 45 chars (same limit enforced by the client input).
- */
-function serverCheckAnswer(
+function judgeAnswer(
   input: string,
-  normName: string,
-  normAliases: string[],
-): boolean {
-  const trimmed = input.trim();
-  if (trimmed.length > 45) return false;
-  if (trimmed.length === 0) return false;
+  targetKey: string,
+  countries: AnswerForms[],
+): { correct: boolean; closestKey: string | null } {
+  const answer = normaliseAnswer(input);
+  if (answer.length === 0 || answer.length > 45) return { correct: false, closestKey: null };
 
-  const normalised = normaliseString(trimmed);
-
-  if (normalised === normName) return true;
-  if (normAliases.some(a => a === normalised)) return true;
-  if (levenshtein(normalised, normName) <= getLevenshteinThreshold(normName.length)) return true;
-
-  return false;
+  let targetDist = Infinity;
+  let targetLength = 0;
+  let bestDist = Infinity;
+  let bestKey: string | null = null;
+  for (const country of countries) {
+    for (const form of country.forms) {
+      // Over 2 edits never decides anything: 2 is the most typos ever allowed.
+      if (Math.abs(form.length - answer.length) > 2) continue;
+      const dist = editDistance(answer, form);
+      if (country.key === targetKey && dist < targetDist) {
+        targetDist = dist;
+        targetLength = form.length;
+      }
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestKey = country.key;
+      }
+    }
+  }
+  const correct = targetDist <= allowedEdits(targetLength) && targetDist <= bestDist;
+  return { correct, closestKey: correct ? targetKey : bestKey };
 }
+
+// ── End of answer rule ────────────────────────────────────────────────────────
+
+/** Every country's accepted spellings, keyed by country code. */
+const ANSWER_FORMS: AnswerForms[] = [...NORMALISED_COUNTRY_MAP.values()].map(c => ({
+  key:   c.code,
+  forms: [c.normName, ...c.normAliases].map(normaliseAnswer),
+}));
 
 /**
  * Timing validation: reject submissions that are impossibly fast.
@@ -407,12 +426,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ error: 'Invalid submission: unknown countryCode' });
         }
 
-        // Server recalculates correctness using pre-normalised data from NORMALISED_COUNTRY_MAP
-        const isCorrect = serverCheckAnswer(
-          answer.playerInput,
-          country.normName,
-          country.normAliases,
-        );
+        // Server recalculates correctness with the same rule the client shows
+        const isCorrect = judgeAnswer(answer.playerInput, country.code, ANSWER_FORMS).correct;
 
         if (isCorrect) {
           score += answer.assurance as number;
