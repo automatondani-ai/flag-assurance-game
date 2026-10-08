@@ -35,8 +35,13 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 
-// ── Redis key ─────────────────────────────────────────────────────────────────
+// ── Redis keys ────────────────────────────────────────────────────────────────
 const LEADERBOARD_KEY = 'flag:leaderboard';
+// Hash: player key (name + region) → that player's leaderboard row, so each player
+// keeps a single row per region holding their best score.
+const BEST_KEY = 'flag:leaderboard:best';
+// GET reads this many rows to find the top 10 different players.
+const GET_WINDOW = 100;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +56,23 @@ function sanitise(s: string): string {
 /** Unicode-aware normalisation: NFC + lower-case. Applied to player input before comparisons. */
 function normaliseString(s: string): string {
   return s.normalize('NFC').toLowerCase();
+}
+
+/**
+ * Leaderboard identity: the same name (ignoring case and spacing) in the same region
+ * counts as one player, e.g. "crystal|africa".
+ */
+function playerKey(name: string, region: string): string {
+  const norm = (s: string) => normaliseString(s).replace(/\s+/g, ' ').trim();
+  return `${norm(name)}|${norm(region)}`;
+}
+
+/**
+ * The stored sorted-set member for an entry. @upstash/redis parses JSON members on
+ * read; re-serialising gives back the exact string that JSON.stringify stored.
+ */
+function toMember(raw: unknown): string {
+  return typeof raw === 'string' ? raw : JSON.stringify(raw);
 }
 
 /** Attach security headers to every response. */
@@ -208,25 +230,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // ── GET — fetch top 10 ──────────────────────────────────────────────────
+    // ── GET — top 10, one row per player and region ─────────────────────────
     if (req.method === 'GET') {
-      const entries = await redis.zrange(LEADERBOARD_KEY, 0, 9, {
+      const entries = await redis.zrange(LEADERBOARD_KEY, 0, GET_WINDOW - 1, {
         rev: true,
         withScores: true,
       }) as (string | number)[];
 
-      // entries alternates [member, score, member, score, ...]
+      // entries alternates [member, score, member, score, ...], best first
       const parsed: (LeaderboardEntry & { rank: number })[] = [];
+      const seen    = new Set<string>();
+      const repeats: string[] = [];
       for (let i = 0; i < entries.length; i += 2) {
         try {
           const raw = entries[i];
           // @upstash/redis may auto-parse JSON objects — handle both
           const entry: LeaderboardEntry =
             typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown as LeaderboardEntry);
-          parsed.push({ ...entry, rank: Math.floor(i / 2) + 1 });
+          const key = playerKey(entry.name, entry.region);
+          if (seen.has(key)) {
+            // A lower score by a player already listed for this region.
+            repeats.push(toMember(raw));
+            continue;
+          }
+          seen.add(key);
+          if (parsed.length < 10) parsed.push({ ...entry, rank: parsed.length + 1 });
         } catch {
           // skip malformed entries silently
         }
+      }
+
+      // Remove repeat rows (saved before scores were kept per player) so they stop
+      // taking up room in the window.
+      if (repeats.length > 0) {
+        await redis.zrem(LEADERBOARD_KEY, ...repeats);
       }
       return res.status(200).json({ leaderboard: parsed });
     }
@@ -416,18 +453,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gameLength,
       };
 
+      // Record this submission's hash (TTL 24 h) to block replay attacks.
+      await redis.set(hashKey, 1, { ex: 86400 });
+
+      // One row per player and region: store this game only if it beats their best.
+      const key        = playerKey(name, region);
+      const previous   = await redis.hget<unknown>(BEST_KEY, key);
+      const prevMember = previous == null ? null : toMember(previous);
+      const prevScore  = prevMember ? await redis.zscore(LEADERBOARD_KEY, prevMember) : null;
+      if (prevScore !== null && prevScore >= entry.score) {
+        return res.status(200).json({ success: true, best: false });
+      }
+
       // Store in sorted set using server-verified score as the sort key.
       // UUID in entry prevents duplicate-member collisions.
       const memberKey = JSON.stringify(entry);
       await redis.zadd(LEADERBOARD_KEY, { score: entry.score, member: memberKey });
+      if (prevMember) await redis.zrem(LEADERBOARD_KEY, prevMember);
+      await redis.hset(BEST_KEY, { [key]: memberKey });
 
       // Keep only top 1000 entries to prevent unbounded growth.
       await redis.zremrangebyrank(LEADERBOARD_KEY, 0, -1001);
 
-      // Record this submission's hash (TTL 24 h) to block replay attacks.
-      await redis.set(hashKey, 1, { ex: 86400 });
-
-      return res.status(200).json({ success: true });
+      return res.status(200).json({ success: true, best: true });
     }
 
   } catch (err) {

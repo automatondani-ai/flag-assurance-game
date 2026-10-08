@@ -64,7 +64,12 @@ Every answered or skipped question is accumulated into `state.answers` as a `Gam
 ## Leaderboard API (`api/leaderboard.ts`)
 
 - Redis sorted set key: `flag:leaderboard` (top 1000 kept)
-- GET: returns top 10
+- **One row per player per region.**
+  - A player is the same name (case and extra spaces ignored) playing the same region string ("Africa", "World", "Africa, Europe"…).
+  - The hash `flag:leaderboard:best` maps `playerKey(name, region)` to that player's row.
+  - A POST is stored only if it beats that row's score (a tie keeps the earlier game), and then it replaces the row.
+  - The response includes `best: true|false`.
+- GET: reads the top 100 rows, returns the top 10 *different* players (ranks 1–10), and deletes any repeat rows it finds. Those are rows saved before the one-row rule, or a returning player's first game after it.
 - POST: validates body, checks honeypot, validates timing (≥10 s total, ≥2 s per answer), checks SHA-256 replay hash, recalculates score, stores entry
 - Rate limits: 60/hr and 10/min per IP (Redis time-bucketed keys)
 - Duplicate POSTs return **409**
