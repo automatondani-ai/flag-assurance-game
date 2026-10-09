@@ -51,8 +51,20 @@ Every answered or skipped question is accumulated into `state.answers` as a `Gam
 
 The screen (`checkAnswer` in `src/utils/gameUtils.ts`) and the leaderboard (`api/leaderboard.ts`) judge answers with the **same code**. It lives in the block between `── Answer rule ──` and `── End of answer rule ──`, copied word for word into both files because they can't import each other. Keep the two blocks identical; `diff` them after any change. Before October 2026 the client used Fuse.js and the server used Levenshtein, and they disagreed on hundreds of typos: "Nigeira" showed Correct but scored as wrong.
 
-- **Normalising:** NFC, lower-case, single spaces, trimmed (`normaliseAnswer`). Empty answers and answers over 45 characters are wrong.
-- **When an answer is right:** it is within the allowed typos of the country's name or one of its aliases. That is 1 edit for spellings of up to 7 letters and 2 for longer ones. Swapping two neighbouring letters counts as one edit (optimal string alignment).
+- **Normalising** (`normaliseAnswer`):
+  - lower-case
+  - accents dropped ("São Tomé" → "sao tome")
+  - curly apostrophes straightened
+  - "&" read as "and"
+  - single spaces
+  - a leading "the" removed ("The Gambia")
+
+  Empty answers and answers over 45 characters are wrong.
+- **When an answer is right:** it is within the allowed typos of the country's name or one of its aliases.
+  - None for short forms of up to 3 letters ("USA", "UK", "NZ" must be exact, so "u" isn't the US).
+  - 1 edit for spellings of up to 7 letters, 2 for longer ones.
+  - Swapping two neighbouring letters counts as one edit (optimal string alignment).
+- **Aliases** cover common names that aren't typos: USA / America, UK / Great Britain, Holland, Czechia, Cape Verde, Türkiye, Bosnia, Burkina, Korea, KSA… Never add an alias two countries could share (e.g. a bare "Congo").
 - **Another country can't be closer:** "Iraq" is not a typo of "Iran", and "Niger" is wrong for Nigeria. Ties count as right.
 - **Part of a name on its own** ("Burkina", "South") is wrong unless it's an alias. Add common short names as aliases in **both** country lists.
 - **Keys:** the client keys countries by name; the server keys them by code via `NORMALISED_COUNTRY_MAP`.

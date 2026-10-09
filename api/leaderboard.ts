@@ -58,7 +58,10 @@ function sanitise(s: string): string {
  * counts as one player, e.g. "crystal|africa".
  */
 function playerKey(name: string, region: string): string {
-  return `${normaliseAnswer(name)}|${normaliseAnswer(region)}`;
+  // Not normaliseAnswer: names keep accents and a leading "the", and existing
+  // keys in flag:leaderboard:best were made this way.
+  const norm = (s: string) => s.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
+  return `${norm(name)}|${norm(region)}`;
 }
 
 /**
@@ -84,14 +87,27 @@ function setSecurityHeaders(res: VercelResponse): void {
 /** A country's accepted spellings (name and aliases), normalised. */
 type AnswerForms = { key: string; forms: string[] };
 
-/** NFC, lower-case, single spaces, trimmed. */
+/**
+ * Lower-case without accents ("São Tomé" → "sao tome"), straight apostrophes,
+ * "&" read as "and", single spaces, and no leading "the" ("The Gambia").
+ */
 function normaliseAnswer(s: string): string {
-  return s.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
+  return s
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/&/g, ' and ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^the /, '');
 }
 
-/** Most typos allowed: 1 for names of up to 7 letters, 2 for longer ones. */
+/**
+ * Most typos allowed: none for short forms of up to 3 letters (so "u" isn't
+ * "US"), 1 for names of up to 7 letters, 2 for longer ones.
+ */
 function allowedEdits(length: number): number {
-  return length <= 7 ? 1 : 2;
+  return length <= 3 ? 0 : length <= 7 ? 1 : 2;
 }
 
 /**
